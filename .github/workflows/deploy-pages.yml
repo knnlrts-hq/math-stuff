@@ -1,0 +1,43 @@
+name: Publish webapps
+on:
+  push:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Assemble _site
+        run: |
+          rm -rf _site
+          mkdir -p _site
+
+          # Put your landing page at the top:
+          cp index.html _site/index.html
+
+          # Copy each app folder to the top-level of the deployed site:
+          cp -R apps/* _site/
+
+          # Avoid Jekyll processing surprises for pure static folders:
+          touch _site/.nojekyll
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
