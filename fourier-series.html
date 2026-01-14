@@ -1,0 +1,942 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fourier Explorer</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            min-height: 100vh;
+            color: #e0e0e0;
+            padding: 20px;
+        }
+        
+        h1 {
+            text-align: center;
+            margin-bottom: 20px;
+            font-weight: 300;
+            letter-spacing: 2px;
+            color: #00d9ff;
+            text-shadow: 0 0 20px rgba(0, 217, 255, 0.3);
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        
+        .tab {
+            padding: 12px 24px;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 14px;
+        }
+        
+        .tab:hover {
+            background: rgba(255,255,255,0.1);
+        }
+        
+        .tab.active {
+            background: rgba(0, 217, 255, 0.2);
+            border-color: #00d9ff;
+            color: #00d9ff;
+        }
+        
+        .panel {
+            display: none;
+            background: rgba(255,255,255,0.03);
+            border-radius: 16px;
+            padding: 24px;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        
+        .panel.active {
+            display: block;
+        }
+        
+        .canvas-container {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+        
+        canvas {
+            background: rgba(0,0,0,0.3);
+            border-radius: 12px;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        
+        .controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            margin-top: 20px;
+        }
+        
+        .control-group {
+            flex: 1;
+            min-width: 200px;
+        }
+        
+        .control-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 13px;
+            color: #888;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .control-group input[type="range"] {
+            width: 100%;
+            height: 6px;
+            border-radius: 3px;
+            background: rgba(255,255,255,0.1);
+            appearance: none;
+            outline: none;
+        }
+        
+        .control-group input[type="range"]::-webkit-slider-thumb {
+            appearance: none;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: #00d9ff;
+            cursor: pointer;
+            box-shadow: 0 0 10px rgba(0, 217, 255, 0.5);
+        }
+        
+        .control-group select {
+            width: 100%;
+            padding: 10px;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 6px;
+            color: #e0e0e0;
+            font-size: 14px;
+            cursor: pointer;
+        }
+        
+        .control-group select option {
+            background: #1a1a2e;
+        }
+        
+        .value-display {
+            text-align: right;
+            font-size: 14px;
+            color: #00d9ff;
+            margin-top: 4px;
+        }
+        
+        .buttons {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        
+        button {
+            padding: 10px 20px;
+            background: rgba(0, 217, 255, 0.2);
+            border: 1px solid #00d9ff;
+            border-radius: 6px;
+            color: #00d9ff;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 14px;
+        }
+        
+        button:hover {
+            background: rgba(0, 217, 255, 0.3);
+            box-shadow: 0 0 15px rgba(0, 217, 255, 0.3);
+        }
+        
+        .info-box {
+            background: rgba(0, 217, 255, 0.05);
+            border-left: 3px solid #00d9ff;
+            padding: 15px;
+            margin-top: 20px;
+            border-radius: 0 8px 8px 0;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+        
+        .formula {
+            font-family: 'Times New Roman', serif;
+            font-style: italic;
+            background: rgba(0,0,0,0.3);
+            padding: 10px 15px;
+            border-radius: 6px;
+            display: inline-block;
+            margin: 5px 0;
+        }
+        
+        .drawing-instructions {
+            text-align: center;
+            padding: 10px;
+            color: #888;
+            font-size: 13px;
+        }
+        
+        .harmonics-display {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 15px;
+        }
+        
+        .harmonic-bar {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 8px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 6px;
+            min-width: 50px;
+        }
+        
+        .harmonic-bar .bar {
+            width: 20px;
+            background: linear-gradient(to top, #00d9ff, #ff6b6b);
+            border-radius: 3px;
+            margin-bottom: 5px;
+        }
+        
+        .harmonic-bar span {
+            font-size: 11px;
+            color: #888;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>✦ Fourier Explorer ✦</h1>
+        
+        <div class="tabs">
+            <div class="tab active" data-tab="epicycles">Epicycles</div>
+            <div class="tab" data-tab="waveforms">Waveform Builder</div>
+            <div class="tab" data-tab="drawing">Draw & Transform</div>
+            <div class="tab" data-tab="spectrum">Frequency Spectrum</div>
+        </div>
+        
+        <!-- Epicycles Panel -->
+        <div class="panel active" id="epicycles">
+            <div class="canvas-container">
+                <canvas id="epicycleCanvas" width="800" height="500"></canvas>
+            </div>
+            <div class="controls">
+                <div class="control-group">
+                    <label>Waveform Type</label>
+                    <select id="waveformType">
+                        <option value="square">Square Wave</option>
+                        <option value="sawtooth">Sawtooth Wave</option>
+                        <option value="triangle">Triangle Wave</option>
+                        <option value="pulse">Pulse Wave</option>
+                    </select>
+                </div>
+                <div class="control-group">
+                    <label>Number of Circles: <span id="numCirclesVal">5</span></label>
+                    <input type="range" id="numCircles" min="1" max="50" value="5">
+                </div>
+                <div class="control-group">
+                    <label>Speed: <span id="speedVal">1.0</span>x</label>
+                    <input type="range" id="speed" min="0.1" max="3" step="0.1" value="1">
+                </div>
+                <div class="control-group buttons">
+                    <button id="toggleEpicycle">Pause</button>
+                    <button id="clearTrace">Clear Trace</button>
+                </div>
+            </div>
+            <div class="info-box">
+                <strong>Epicycles Visualization:</strong> Watch how rotating circles (epicycles) of different sizes and speeds combine to draw complex waveforms. Each circle represents a harmonic frequency. The more circles you add, the closer the approximation to the target wave.
+                <br><br>
+                <span class="formula">f(t) = Σ (aₙ cos(nωt) + bₙ sin(nωt))</span>
+            </div>
+        </div>
+        
+        <!-- Waveform Builder Panel -->
+        <div class="panel" id="waveforms">
+            <div class="canvas-container">
+                <canvas id="waveformCanvas" width="800" height="400"></canvas>
+            </div>
+            <div class="harmonics-display" id="harmonicsDisplay"></div>
+            <div class="controls">
+                <div class="control-group">
+                    <label>Fundamental Frequency: <span id="fundFreqVal">1</span> Hz</label>
+                    <input type="range" id="fundFreq" min="0.5" max="5" step="0.1" value="1">
+                </div>
+                <div class="control-group">
+                    <label>Harmonic 1 (Fundamental): <span id="h1Val">100</span>%</label>
+                    <input type="range" id="h1" min="0" max="100" value="100">
+                </div>
+                <div class="control-group">
+                    <label>Harmonic 2: <span id="h2Val">0</span>%</label>
+                    <input type="range" id="h2" min="0" max="100" value="0">
+                </div>
+                <div class="control-group">
+                    <label>Harmonic 3: <span id="h3Val">33</span>%</label>
+                    <input type="range" id="h3" min="0" max="100" value="33">
+                </div>
+                <div class="control-group">
+                    <label>Harmonic 4: <span id="h4Val">0</span>%</label>
+                    <input type="range" id="h4" min="0" max="100" value="0">
+                </div>
+                <div class="control-group">
+                    <label>Harmonic 5: <span id="h5Val">20</span>%</label>
+                    <input type="range" id="h5" min="0" max="100" value="20">
+                </div>
+                <div class="control-group buttons">
+                    <button onclick="setPreset('square')">Square Preset</button>
+                    <button onclick="setPreset('sawtooth')">Sawtooth Preset</button>
+                    <button onclick="setPreset('sine')">Pure Sine</button>
+                    <button onclick="setPreset('organ')">Organ Preset</button>
+                </div>
+            </div>
+            <div class="info-box">
+                <strong>Waveform Builder:</strong> Mix different harmonics to create complex waveforms. Each harmonic is a multiple of the fundamental frequency. This demonstrates how any periodic signal can be decomposed into (or built from) sine waves.
+            </div>
+        </div>
+        
+        <!-- Drawing Panel -->
+        <div class="panel" id="drawing">
+            <div class="canvas-container">
+                <canvas id="drawingCanvas" width="400" height="400"></canvas>
+                <canvas id="reconstructCanvas" width="400" height="400"></canvas>
+            </div>
+            <p class="drawing-instructions">Draw a closed shape on the left canvas. Watch it reconstructed with epicycles on the right!</p>
+            <div class="controls">
+                <div class="control-group">
+                    <label>Reconstruction Circles: <span id="drawCirclesVal">30</span></label>
+                    <input type="range" id="drawCircles" min="1" max="100" value="30">
+                </div>
+                <div class="control-group">
+                    <label>Draw Speed: <span id="drawSpeedVal">1.0</span>x</label>
+                    <input type="range" id="drawSpeed" min="0.2" max="3" step="0.1" value="1">
+                </div>
+                <div class="control-group buttons">
+                    <button id="clearDrawing">Clear Drawing</button>
+                    <button id="toggleDrawAnim">Pause</button>
+                </div>
+            </div>
+            <div class="info-box">
+                <strong>Draw & Transform:</strong> Draw any closed shape and watch the Discrete Fourier Transform decompose it into rotating circles. This shows how Fourier analysis can represent any path as a sum of circular motions at different frequencies.
+            </div>
+        </div>
+        
+        <!-- Spectrum Panel -->
+        <div class="panel" id="spectrum">
+            <div class="canvas-container">
+                <canvas id="spectrumCanvas" width="800" height="500"></canvas>
+            </div>
+            <div class="controls">
+                <div class="control-group">
+                    <label>Signal Type</label>
+                    <select id="signalType">
+                        <option value="composite">Composite Signal</option>
+                        <option value="chirp">Frequency Chirp</option>
+                        <option value="am">AM Modulated</option>
+                        <option value="noise">Signal + Noise</option>
+                    </select>
+                </div>
+                <div class="control-group">
+                    <label>Primary Frequency: <span id="primaryFreqVal">3</span> Hz</label>
+                    <input type="range" id="primaryFreq" min="1" max="20" value="3">
+                </div>
+                <div class="control-group">
+                    <label>Secondary Frequency: <span id="secondaryFreqVal">8</span> Hz</label>
+                    <input type="range" id="secondaryFreq" min="1" max="20" value="8">
+                </div>
+                <div class="control-group">
+                    <label>Noise Level: <span id="noiseVal">0</span>%</label>
+                    <input type="range" id="noiseLevel" min="0" max="100" value="0">
+                </div>
+            </div>
+            <div class="info-box">
+                <strong>Frequency Spectrum:</strong> See the time-domain signal (top) and its frequency spectrum (bottom). The spectrum reveals the constituent frequencies hidden within complex signals. This is the heart of the Fourier Transform!
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Tab switching
+        document.querySelectorAll('.tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+                tab.classList.add('active');
+                document.getElementById(tab.dataset.tab).classList.add('active');
+            });
+        });
+
+        // ============ EPICYCLES ============
+        const epicycleCanvas = document.getElementById('epicycleCanvas');
+        const ectx = epicycleCanvas.getContext('2d');
+        let epicycleTime = 0;
+        let epicycleRunning = true;
+        let waveTrace = [];
+
+        function getWaveformCoefficients(type, n) {
+            const coeffs = [];
+            for (let i = 0; i < n; i++) {
+                let k = i + 1;
+                let amp = 0;
+                
+                if (type === 'square') {
+                    if (k % 2 === 1) amp = 4 / (Math.PI * k);
+                } else if (type === 'sawtooth') {
+                    amp = 2 / (Math.PI * k) * (k % 2 === 0 ? 1 : -1) * -1;
+                } else if (type === 'triangle') {
+                    if (k % 2 === 1) amp = 8 / (Math.PI * Math.PI * k * k) * (((k-1)/2) % 2 === 0 ? 1 : -1);
+                } else if (type === 'pulse') {
+                    amp = 2 / (Math.PI * k) * Math.sin(k * Math.PI * 0.25);
+                }
+                
+                coeffs.push({ freq: k, amp: amp });
+            }
+            return coeffs.filter(c => Math.abs(c.amp) > 0.001).sort((a, b) => Math.abs(b.amp) - Math.abs(a.amp));
+        }
+
+        function drawEpicycles() {
+            const numCircles = parseInt(document.getElementById('numCircles').value);
+            const speed = parseFloat(document.getElementById('speed').value);
+            const waveType = document.getElementById('waveformType').value;
+            
+            ectx.fillStyle = 'rgba(0,0,0,0.1)';
+            ectx.fillRect(0, 0, epicycleCanvas.width, epicycleCanvas.height);
+            
+            const coeffs = getWaveformCoefficients(waveType, numCircles);
+            const centerX = 200;
+            const centerY = 250;
+            const scale = 80;
+            
+            let x = centerX;
+            let y = centerY;
+            
+            // Draw circles
+            for (let i = 0; i < coeffs.length; i++) {
+                const { freq, amp } = coeffs[i];
+                const radius = Math.abs(amp) * scale;
+                
+                ectx.strokeStyle = `hsla(${180 + i * 20}, 70%, 60%, 0.5)`;
+                ectx.lineWidth = 1;
+                ectx.beginPath();
+                ectx.arc(x, y, radius, 0, Math.PI * 2);
+                ectx.stroke();
+                
+                const angle = freq * epicycleTime;
+                const nx = x + Math.cos(angle) * radius * Math.sign(amp);
+                const ny = y + Math.sin(angle) * radius;
+                
+                ectx.strokeStyle = `hsla(${180 + i * 20}, 70%, 70%, 0.8)`;
+                ectx.beginPath();
+                ectx.moveTo(x, y);
+                ectx.lineTo(nx, ny);
+                ectx.stroke();
+                
+                ectx.fillStyle = '#00d9ff';
+                ectx.beginPath();
+                ectx.arc(nx, ny, 3, 0, Math.PI * 2);
+                ectx.fill();
+                
+                x = nx;
+                y = ny;
+            }
+            
+            // Store trace point
+            waveTrace.unshift({ x: 350, y: y });
+            if (waveTrace.length > 450) waveTrace.pop();
+            
+            // Draw connecting line
+            ectx.strokeStyle = 'rgba(0, 217, 255, 0.5)';
+            ectx.setLineDash([5, 5]);
+            ectx.beginPath();
+            ectx.moveTo(x, y);
+            ectx.lineTo(350, y);
+            ectx.stroke();
+            ectx.setLineDash([]);
+            
+            // Draw wave trace
+            ectx.strokeStyle = '#ff6b6b';
+            ectx.lineWidth = 2;
+            ectx.beginPath();
+            for (let i = 0; i < waveTrace.length; i++) {
+                const pt = waveTrace[i];
+                if (i === 0) ectx.moveTo(pt.x + i, pt.y);
+                else ectx.lineTo(pt.x + i, pt.y);
+            }
+            ectx.stroke();
+            
+            if (epicycleRunning) {
+                epicycleTime += 0.02 * speed;
+                requestAnimationFrame(drawEpicycles);
+            }
+        }
+
+        document.getElementById('numCircles').oninput = (e) => {
+            document.getElementById('numCirclesVal').textContent = e.target.value;
+        };
+        document.getElementById('speed').oninput = (e) => {
+            document.getElementById('speedVal').textContent = e.target.value;
+        };
+        document.getElementById('toggleEpicycle').onclick = () => {
+            epicycleRunning = !epicycleRunning;
+            document.getElementById('toggleEpicycle').textContent = epicycleRunning ? 'Pause' : 'Play';
+            if (epicycleRunning) drawEpicycles();
+        };
+        document.getElementById('clearTrace').onclick = () => {
+            waveTrace = [];
+        };
+
+        drawEpicycles();
+
+        // ============ WAVEFORM BUILDER ============
+        const waveformCanvas = document.getElementById('waveformCanvas');
+        const wctx = waveformCanvas.getContext('2d');
+        let waveAnimTime = 0;
+
+        function drawWaveform() {
+            const fundFreq = parseFloat(document.getElementById('fundFreq').value);
+            const harmonics = [
+                parseFloat(document.getElementById('h1').value) / 100,
+                parseFloat(document.getElementById('h2').value) / 100,
+                parseFloat(document.getElementById('h3').value) / 100,
+                parseFloat(document.getElementById('h4').value) / 100,
+                parseFloat(document.getElementById('h5').value) / 100
+            ];
+            
+            wctx.fillStyle = '#0d1117';
+            wctx.fillRect(0, 0, waveformCanvas.width, waveformCanvas.height);
+            
+            // Draw grid
+            wctx.strokeStyle = 'rgba(255,255,255,0.1)';
+            wctx.lineWidth = 1;
+            for (let i = 0; i <= 8; i++) {
+                wctx.beginPath();
+                wctx.moveTo(i * 100, 0);
+                wctx.lineTo(i * 100, 400);
+                wctx.stroke();
+            }
+            for (let i = 0; i <= 4; i++) {
+                wctx.beginPath();
+                wctx.moveTo(0, i * 100);
+                wctx.lineTo(800, i * 100);
+                wctx.stroke();
+            }
+            
+            // Draw individual harmonics (faded)
+            for (let h = 0; h < harmonics.length; h++) {
+                if (harmonics[h] < 0.01) continue;
+                wctx.strokeStyle = `hsla(${h * 60}, 70%, 60%, 0.3)`;
+                wctx.lineWidth = 1;
+                wctx.beginPath();
+                for (let x = 0; x < waveformCanvas.width; x++) {
+                    const t = (x / waveformCanvas.width) * 4 * Math.PI + waveAnimTime;
+                    const y = 200 - Math.sin(t * (h + 1) * fundFreq) * harmonics[h] * 100;
+                    if (x === 0) wctx.moveTo(x, y);
+                    else wctx.lineTo(x, y);
+                }
+                wctx.stroke();
+            }
+            
+            // Draw combined wave
+            wctx.strokeStyle = '#00d9ff';
+            wctx.lineWidth = 3;
+            wctx.shadowColor = '#00d9ff';
+            wctx.shadowBlur = 10;
+            wctx.beginPath();
+            for (let x = 0; x < waveformCanvas.width; x++) {
+                const t = (x / waveformCanvas.width) * 4 * Math.PI + waveAnimTime;
+                let y = 0;
+                for (let h = 0; h < harmonics.length; h++) {
+                    y += Math.sin(t * (h + 1) * fundFreq) * harmonics[h];
+                }
+                y = 200 - y * 100;
+                if (x === 0) wctx.moveTo(x, y);
+                else wctx.lineTo(x, y);
+            }
+            wctx.stroke();
+            wctx.shadowBlur = 0;
+            
+            // Update harmonics display
+            updateHarmonicsDisplay(harmonics);
+            
+            waveAnimTime += 0.02;
+            requestAnimationFrame(drawWaveform);
+        }
+
+        function updateHarmonicsDisplay(harmonics) {
+            const container = document.getElementById('harmonicsDisplay');
+            container.innerHTML = '';
+            for (let i = 0; i < harmonics.length; i++) {
+                const div = document.createElement('div');
+                div.className = 'harmonic-bar';
+                const height = harmonics[i] * 60;
+                div.innerHTML = `
+                    <div class="bar" style="height: ${height}px; background: hsl(${i * 60}, 70%, 60%)"></div>
+                    <span>H${i + 1}</span>
+                `;
+                container.appendChild(div);
+            }
+        }
+
+        function setPreset(type) {
+            const presets = {
+                square: [100, 0, 33, 0, 20],
+                sawtooth: [100, 50, 33, 25, 20],
+                sine: [100, 0, 0, 0, 0],
+                organ: [100, 80, 60, 40, 20]
+            };
+            const vals = presets[type];
+            for (let i = 0; i < 5; i++) {
+                document.getElementById(`h${i + 1}`).value = vals[i];
+                document.getElementById(`h${i + 1}Val`).textContent = vals[i];
+            }
+        }
+
+        ['fundFreq', 'h1', 'h2', 'h3', 'h4', 'h5'].forEach(id => {
+            document.getElementById(id).oninput = (e) => {
+                document.getElementById(id + 'Val').textContent = e.target.value;
+            };
+        });
+
+        drawWaveform();
+
+        // ============ DRAWING PANEL ============
+        const drawingCanvas = document.getElementById('drawingCanvas');
+        const dctx = drawingCanvas.getContext('2d');
+        const reconstructCanvas = document.getElementById('reconstructCanvas');
+        const rctx = reconstructCanvas.getContext('2d');
+        
+        let isDrawing = false;
+        let drawPath = [];
+        let fourierCoeffs = [];
+        let drawAnimTime = 0;
+        let drawAnimRunning = true;
+        let reconstructTrace = [];
+
+        drawingCanvas.addEventListener('mousedown', (e) => {
+            isDrawing = true;
+            drawPath = [];
+            reconstructTrace = [];
+            const rect = drawingCanvas.getBoundingClientRect();
+            drawPath.push({
+                x: e.clientX - rect.left - 200,
+                y: e.clientY - rect.top - 200
+            });
+        });
+
+        drawingCanvas.addEventListener('mousemove', (e) => {
+            if (!isDrawing) return;
+            const rect = drawingCanvas.getBoundingClientRect();
+            drawPath.push({
+                x: e.clientX - rect.left - 200,
+                y: e.clientY - rect.top - 200
+            });
+            drawUserPath();
+        });
+
+        drawingCanvas.addEventListener('mouseup', () => {
+            isDrawing = false;
+            if (drawPath.length > 10) {
+                fourierCoeffs = computeDFT(drawPath);
+                drawAnimTime = 0;
+                reconstructTrace = [];
+            }
+        });
+
+        drawingCanvas.addEventListener('mouseleave', () => {
+            isDrawing = false;
+        });
+
+        function drawUserPath() {
+            dctx.fillStyle = '#0d1117';
+            dctx.fillRect(0, 0, 400, 400);
+            
+            // Draw grid
+            dctx.strokeStyle = 'rgba(255,255,255,0.1)';
+            dctx.beginPath();
+            dctx.moveTo(200, 0);
+            dctx.lineTo(200, 400);
+            dctx.moveTo(0, 200);
+            dctx.lineTo(400, 200);
+            dctx.stroke();
+            
+            if (drawPath.length < 2) return;
+            
+            dctx.strokeStyle = '#00d9ff';
+            dctx.lineWidth = 2;
+            dctx.beginPath();
+            for (let i = 0; i < drawPath.length; i++) {
+                const p = drawPath[i];
+                if (i === 0) dctx.moveTo(p.x + 200, p.y + 200);
+                else dctx.lineTo(p.x + 200, p.y + 200);
+            }
+            dctx.stroke();
+        }
+
+        function computeDFT(path) {
+            const N = path.length;
+            const coeffs = [];
+            
+            for (let k = -Math.floor(N/2); k < Math.floor(N/2); k++) {
+                let re = 0, im = 0;
+                for (let n = 0; n < N; n++) {
+                    const angle = (2 * Math.PI * k * n) / N;
+                    re += path[n].x * Math.cos(angle) + path[n].y * Math.sin(angle);
+                    im += path[n].y * Math.cos(angle) - path[n].x * Math.sin(angle);
+                }
+                re /= N;
+                im /= N;
+                
+                coeffs.push({
+                    freq: k,
+                    amp: Math.sqrt(re * re + im * im),
+                    phase: Math.atan2(im, re),
+                    re: re,
+                    im: im
+                });
+            }
+            
+            return coeffs.sort((a, b) => b.amp - a.amp);
+        }
+
+        function drawReconstruction() {
+            const numCircles = parseInt(document.getElementById('drawCircles').value);
+            const speed = parseFloat(document.getElementById('drawSpeed').value);
+            
+            rctx.fillStyle = '#0d1117';
+            rctx.fillRect(0, 0, 400, 400);
+            
+            // Draw grid
+            rctx.strokeStyle = 'rgba(255,255,255,0.1)';
+            rctx.beginPath();
+            rctx.moveTo(200, 0);
+            rctx.lineTo(200, 400);
+            rctx.moveTo(0, 200);
+            rctx.lineTo(400, 200);
+            rctx.stroke();
+            
+            if (fourierCoeffs.length === 0) {
+                if (drawAnimRunning) requestAnimationFrame(drawReconstruction);
+                return;
+            }
+            
+            let x = 200, y = 200;
+            const useCoeffs = fourierCoeffs.slice(0, numCircles);
+            
+            for (let i = 0; i < useCoeffs.length; i++) {
+                const c = useCoeffs[i];
+                const radius = c.amp;
+                
+                rctx.strokeStyle = `hsla(${180 + i * 5}, 70%, 60%, 0.4)`;
+                rctx.lineWidth = 1;
+                rctx.beginPath();
+                rctx.arc(x, y, radius, 0, Math.PI * 2);
+                rctx.stroke();
+                
+                const angle = c.freq * drawAnimTime + c.phase;
+                const nx = x + c.re * Math.cos(c.freq * drawAnimTime) - c.im * Math.sin(c.freq * drawAnimTime);
+                const ny = y + c.re * Math.sin(c.freq * drawAnimTime) + c.im * Math.cos(c.freq * drawAnimTime);
+                
+                rctx.strokeStyle = `hsla(${180 + i * 5}, 70%, 70%, 0.7)`;
+                rctx.beginPath();
+                rctx.moveTo(x, y);
+                rctx.lineTo(nx, ny);
+                rctx.stroke();
+                
+                x = nx;
+                y = ny;
+            }
+            
+            reconstructTrace.push({ x, y });
+            if (reconstructTrace.length > drawPath.length + 50) {
+                reconstructTrace.shift();
+            }
+            
+            // Draw trace
+            rctx.strokeStyle = '#ff6b6b';
+            rctx.lineWidth = 2;
+            rctx.beginPath();
+            for (let i = 0; i < reconstructTrace.length; i++) {
+                const p = reconstructTrace[i];
+                if (i === 0) rctx.moveTo(p.x, p.y);
+                else rctx.lineTo(p.x, p.y);
+            }
+            rctx.stroke();
+            
+            // Draw current point
+            rctx.fillStyle = '#00d9ff';
+            rctx.beginPath();
+            rctx.arc(x, y, 4, 0, Math.PI * 2);
+            rctx.fill();
+            
+            if (drawAnimRunning) {
+                drawAnimTime += 0.02 * speed * (2 * Math.PI / drawPath.length);
+                requestAnimationFrame(drawReconstruction);
+            }
+        }
+
+        document.getElementById('drawCircles').oninput = (e) => {
+            document.getElementById('drawCirclesVal').textContent = e.target.value;
+        };
+        document.getElementById('drawSpeed').oninput = (e) => {
+            document.getElementById('drawSpeedVal').textContent = e.target.value;
+        };
+        document.getElementById('clearDrawing').onclick = () => {
+            drawPath = [];
+            fourierCoeffs = [];
+            reconstructTrace = [];
+            drawUserPath();
+        };
+        document.getElementById('toggleDrawAnim').onclick = () => {
+            drawAnimRunning = !drawAnimRunning;
+            document.getElementById('toggleDrawAnim').textContent = drawAnimRunning ? 'Pause' : 'Play';
+            if (drawAnimRunning) drawReconstruction();
+        };
+
+        drawUserPath();
+        drawReconstruction();
+
+        // ============ SPECTRUM ANALYZER ============
+        const spectrumCanvas = document.getElementById('spectrumCanvas');
+        const sctx = spectrumCanvas.getContext('2d');
+        let spectrumTime = 0;
+
+        function drawSpectrum() {
+            const signalType = document.getElementById('signalType').value;
+            const primaryFreq = parseInt(document.getElementById('primaryFreq').value);
+            const secondaryFreq = parseInt(document.getElementById('secondaryFreq').value);
+            const noiseLevel = parseInt(document.getElementById('noiseLevel').value) / 100;
+            
+            sctx.fillStyle = '#0d1117';
+            sctx.fillRect(0, 0, 800, 500);
+            
+            // Generate signal
+            const N = 256;
+            const signal = [];
+            
+            for (let i = 0; i < N; i++) {
+                const t = i / N * 4 * Math.PI;
+                let value = 0;
+                
+                if (signalType === 'composite') {
+                    value = Math.sin(t * primaryFreq) + 0.5 * Math.sin(t * secondaryFreq);
+                } else if (signalType === 'chirp') {
+                    const freq = primaryFreq + (secondaryFreq - primaryFreq) * (i / N);
+                    value = Math.sin(t * freq);
+                } else if (signalType === 'am') {
+                    value = (1 + 0.5 * Math.sin(t * primaryFreq)) * Math.sin(t * secondaryFreq);
+                } else if (signalType === 'noise') {
+                    value = Math.sin(t * primaryFreq);
+                }
+                
+                // Add noise
+                value += (Math.random() - 0.5) * 2 * noiseLevel;
+                signal.push(value);
+            }
+            
+            // Draw time domain (top half)
+            sctx.fillStyle = 'rgba(0, 217, 255, 0.1)';
+            sctx.fillRect(0, 0, 800, 200);
+            
+            sctx.strokeStyle = 'rgba(255,255,255,0.2)';
+            sctx.beginPath();
+            sctx.moveTo(0, 100);
+            sctx.lineTo(800, 100);
+            sctx.stroke();
+            
+            sctx.fillStyle = '#888';
+            sctx.font = '12px sans-serif';
+            sctx.fillText('TIME DOMAIN', 10, 20);
+            
+            sctx.strokeStyle = '#00d9ff';
+            sctx.lineWidth = 2;
+            sctx.beginPath();
+            for (let i = 0; i < N; i++) {
+                const x = (i / N) * 800;
+                const y = 100 - signal[i] * 60;
+                if (i === 0) sctx.moveTo(x, y);
+                else sctx.lineTo(x, y);
+            }
+            sctx.stroke();
+            
+            // Compute FFT (simplified DFT for visualization)
+            const spectrum = [];
+            for (let k = 0; k < N / 2; k++) {
+                let re = 0, im = 0;
+                for (let n = 0; n < N; n++) {
+                    const angle = (2 * Math.PI * k * n) / N;
+                    re += signal[n] * Math.cos(angle);
+                    im -= signal[n] * Math.sin(angle);
+                }
+                spectrum.push(Math.sqrt(re * re + im * im) / N);
+            }
+            
+            // Draw frequency domain (bottom half)
+            sctx.fillStyle = 'rgba(255, 107, 107, 0.1)';
+            sctx.fillRect(0, 250, 800, 250);
+            
+            sctx.fillStyle = '#888';
+            sctx.fillText('FREQUENCY DOMAIN (MAGNITUDE SPECTRUM)', 10, 270);
+            
+            // Draw frequency axis
+            sctx.strokeStyle = 'rgba(255,255,255,0.2)';
+            sctx.beginPath();
+            sctx.moveTo(0, 480);
+            sctx.lineTo(800, 480);
+            sctx.stroke();
+            
+            // Draw spectrum bars
+            const barWidth = 800 / (N / 2);
+            for (let i = 0; i < N / 2; i++) {
+                const height = spectrum[i] * 300;
+                const x = i * barWidth;
+                
+                const gradient = sctx.createLinearGradient(x, 480, x, 480 - height);
+                gradient.addColorStop(0, '#ff6b6b');
+                gradient.addColorStop(1, '#ffd93d');
+                
+                sctx.fillStyle = gradient;
+                sctx.fillRect(x, 480 - height, barWidth - 1, height);
+            }
+            
+            // Draw frequency labels
+            sctx.fillStyle = '#888';
+            for (let i = 0; i <= 20; i += 5) {
+                const x = (i / 20) * 400;
+                sctx.fillText(`${i}Hz`, x, 495);
+            }
+            
+            spectrumTime += 0.05;
+            requestAnimationFrame(drawSpectrum);
+        }
+
+        ['primaryFreq', 'secondaryFreq', 'noiseLevel'].forEach(id => {
+            document.getElementById(id).oninput = (e) => {
+                document.getElementById(id + 'Val').textContent = e.target.value;
+            };
+        });
+
+        drawSpectrum();
+    </script>
+</body>
+</html>

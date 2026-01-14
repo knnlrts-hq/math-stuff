@@ -1,0 +1,750 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Poincaré Disk Model Explorer</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            min-height: 100vh;
+            color: #e0e0e0;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        h1 {
+            text-align: center;
+            margin-bottom: 10px;
+            color: #fff;
+            font-weight: 300;
+            font-size: 2rem;
+        }
+        
+        .subtitle {
+            text-align: center;
+            color: #888;
+            margin-bottom: 20px;
+            font-size: 0.9rem;
+        }
+        
+        .main-content {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+        
+        .canvas-container {
+            flex: 1;
+            min-width: 500px;
+            background: #0d1b2a;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+        }
+        
+        canvas {
+            display: block;
+            margin: 0 auto;
+            cursor: crosshair;
+            border-radius: 50%;
+        }
+        
+        .controls {
+            width: 280px;
+            background: #0d1b2a;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+        }
+        
+        .control-group {
+            margin-bottom: 20px;
+        }
+        
+        .control-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 0.85rem;
+            color: #aaa;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        button {
+            width: 100%;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: all 0.2s;
+            margin-bottom: 8px;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+        
+        .btn-secondary {
+            background: #1e3a5f;
+            color: #e0e0e0;
+        }
+        
+        .btn-secondary:hover {
+            background: #2a4a70;
+        }
+        
+        .btn-danger {
+            background: #dc3545;
+            color: white;
+        }
+        
+        .btn-danger:hover {
+            background: #c82333;
+        }
+        
+        .mode-buttons {
+            display: flex;
+            gap: 8px;
+        }
+        
+        .mode-buttons button {
+            flex: 1;
+            padding: 10px 8px;
+            font-size: 0.8rem;
+        }
+        
+        .mode-buttons button.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        
+        .info-box {
+            background: #152238;
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 15px;
+            font-size: 0.85rem;
+            line-height: 1.6;
+        }
+        
+        .info-box h3 {
+            color: #667eea;
+            margin-bottom: 10px;
+            font-size: 0.9rem;
+        }
+        
+        .legend {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-top: 10px;
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 0.8rem;
+        }
+        
+        .legend-color {
+            width: 20px;
+            height: 3px;
+            border-radius: 2px;
+        }
+        
+        .instructions {
+            background: #152238;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 15px;
+            font-size: 0.8rem;
+            line-height: 1.6;
+        }
+        
+        .instructions h3 {
+            color: #667eea;
+            margin-bottom: 8px;
+        }
+        
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+        
+        .checkbox-group input {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+        }
+        
+        .checkbox-group span {
+            font-size: 0.85rem;
+        }
+        
+        @media (max-width: 900px) {
+            .main-content {
+                flex-direction: column;
+            }
+            .canvas-container {
+                min-width: auto;
+            }
+            .controls {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Poincaré Disk Model</h1>
+        <p class="subtitle">Explore hyperbolic geometry and parallel lines</p>
+        
+        <div class="main-content">
+            <div class="canvas-container">
+                <canvas id="canvas" width="500" height="500"></canvas>
+            </div>
+            
+            <div class="controls">
+                <div class="instructions">
+                    <h3>How to Use</h3>
+                    <p><strong>Draw Line:</strong> Click two points to create a geodesic (hyperbolic line)</p>
+                    <p><strong>Parallel Lines:</strong> Click a line, then a point to see parallel lines through that point</p>
+                    <p><strong>Add Point:</strong> Click to place points on the disk</p>
+                </div>
+                
+                <div class="control-group">
+                    <label>Drawing Mode</label>
+                    <div class="mode-buttons">
+                        <button id="mode-line" class="btn-secondary active">Draw Line</button>
+                        <button id="mode-parallel" class="btn-secondary">Parallels</button>
+                        <button id="mode-point" class="btn-secondary">Add Point</button>
+                    </div>
+                </div>
+                
+                <div class="control-group">
+                    <label>Display Options</label>
+                    <div class="checkbox-group">
+                        <input type="checkbox" id="show-grid" checked>
+                        <span>Show Hyperbolic Grid</span>
+                    </div>
+                    <div class="checkbox-group">
+                        <input type="checkbox" id="show-horocycles">
+                        <span>Show Horocycles</span>
+                    </div>
+                </div>
+                
+                <div class="control-group">
+                    <label>Actions</label>
+                    <button id="btn-demo" class="btn-primary">Show Parallel Demo</button>
+                    <button id="btn-clear" class="btn-danger">Clear All</button>
+                </div>
+                
+                <div class="info-box">
+                    <h3>About Hyperbolic Parallels</h3>
+                    <p>In hyperbolic geometry, given a line and a point not on it, there are <strong>infinitely many</strong> lines through the point that never intersect the original line.</p>
+                    <p style="margin-top: 10px;">The two <span style="color: #f39c12;">orange</span> lines shown are the <strong>limiting parallel lines</strong> — they approach the original line asymptotically at the boundary.</p>
+                    
+                    <div class="legend">
+                        <div class="legend-item">
+                            <div class="legend-color" style="background: #667eea;"></div>
+                            <span>Geodesic (hyperbolic line)</span>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-color" style="background: #f39c12;"></div>
+                            <span>Limiting parallels</span>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-color" style="background: #2ecc71;"></div>
+                            <span>Ultra-parallel lines</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        const centerX = canvas.width / 2;
+        const centerY = canvas.height / 2;
+        const diskRadius = 230;
+        
+        let mode = 'line';
+        let points = [];
+        let geodesics = [];
+        let tempPoint = null;
+        let selectedGeodesic = null;
+        let parallelLines = [];
+        
+        // Convert canvas coords to disk coords (-1 to 1)
+        function canvasToDisk(x, y) {
+            return {
+                x: (x - centerX) / diskRadius,
+                y: (y - centerY) / diskRadius
+            };
+        }
+        
+        // Convert disk coords to canvas coords
+        function diskToCanvas(x, y) {
+            return {
+                x: x * diskRadius + centerX,
+                y: y * diskRadius + centerY
+            };
+        }
+        
+        // Check if point is inside disk
+        function isInsideDisk(x, y) {
+            return x * x + y * y < 0.98;
+        }
+        
+        // Calculate geodesic (circular arc) through two points
+        function calculateGeodesic(p1, p2) {
+            const x1 = p1.x, y1 = p1.y;
+            const x2 = p2.x, y2 = p2.y;
+            
+            // Check if points are on a diameter (through origin)
+            const cross = x1 * y2 - x2 * y1;
+            if (Math.abs(cross) < 0.001) {
+                // It's a diameter
+                return { type: 'line', p1, p2 };
+            }
+            
+            // Find the circle orthogonal to unit circle passing through both points
+            // Using the inverse points method
+            const d1 = x1 * x1 + y1 * y1;
+            const d2 = x2 * x2 + y2 * y2;
+            
+            // Inverse points
+            const inv1 = { x: x1 / d1, y: y1 / d1 };
+            const inv2 = { x: x2 / d2, y: y2 / d2 };
+            
+            // Find circle through p1, p2, inv1 (or inv2)
+            const ax = x1, ay = y1;
+            const bx = x2, by = y2;
+            const cx = inv1.x, cy = inv1.y;
+            
+            const d = 2 * (ax * (by - cy) + bx * (cy - ay) + cx * (ay - by));
+            if (Math.abs(d) < 0.0001) {
+                return { type: 'line', p1, p2 };
+            }
+            
+            const ux = ((ax * ax + ay * ay) * (by - cy) + (bx * bx + by * by) * (cy - ay) + (cx * cx + cy * cy) * (ay - by)) / d;
+            const uy = ((ax * ax + ay * ay) * (cx - bx) + (bx * bx + by * by) * (ax - cx) + (cx * cx + cy * cy) * (bx - ax)) / d;
+            
+            const r = Math.sqrt((ax - ux) * (ax - ux) + (ay - uy) * (ay - uy));
+            
+            return {
+                type: 'arc',
+                center: { x: ux, y: uy },
+                radius: r,
+                p1, p2
+            };
+        }
+        
+        // Find where geodesic intersects the boundary
+        function getGeodesicEndpoints(geo) {
+            if (geo.type === 'line') {
+                const dx = geo.p2.x - geo.p1.x;
+                const dy = geo.p2.y - geo.p1.y;
+                const len = Math.sqrt(dx * dx + dy * dy);
+                const nx = dx / len;
+                const ny = dy / len;
+                return [
+                    { x: -nx * 0.999, y: -ny * 0.999 },
+                    { x: nx * 0.999, y: ny * 0.999 }
+                ];
+            }
+            
+            // Find intersection with unit circle
+            const cx = geo.center.x;
+            const cy = geo.center.y;
+            const r = geo.radius;
+            
+            // Solve |p - center| = r and |p| = 1
+            const a = 1;
+            const b = -2 * cx;
+            const c = cx * cx + cy * cy - r * r;
+            
+            // Quadratic in x, substituting from circle equations
+            const A = 1 + (cx * cx) / (cy * cy);
+            const B = -(cx / cy) * (1 + cx * cx + cy * cy - r * r) / cy;
+            const C = ((1 + cx * cx + cy * cy - r * r) / (2 * cy)) ** 2 - 1;
+            
+            // More direct approach: parameterize the arc
+            const angle1 = Math.atan2(geo.p1.y - cy, geo.p1.x - cx);
+            const angle2 = Math.atan2(geo.p2.y - cy, geo.p2.x - cx);
+            
+            // Find intersections numerically
+            const intersections = [];
+            for (let t = 0; t < 360; t++) {
+                const theta = t * Math.PI / 180;
+                const px = cx + r * Math.cos(theta);
+                const py = cy + r * Math.sin(theta);
+                const dist = Math.sqrt(px * px + py * py);
+                if (Math.abs(dist - 1) < 0.01) {
+                    intersections.push({ x: px / dist, y: py / dist, angle: theta });
+                }
+            }
+            
+            // Clean up to get two distinct points
+            if (intersections.length >= 2) {
+                const result = [intersections[0]];
+                for (let i = 1; i < intersections.length; i++) {
+                    const dx = intersections[i].x - result[0].x;
+                    const dy = intersections[i].y - result[0].y;
+                    if (dx * dx + dy * dy > 0.1) {
+                        result.push(intersections[i]);
+                        break;
+                    }
+                }
+                return result;
+            }
+            
+            return [geo.p1, geo.p2];
+        }
+        
+        // Draw the Poincaré disk
+        function drawDisk() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // Background
+            ctx.fillStyle = '#0a0a1a';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // Disk background
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, diskRadius, 0, Math.PI * 2);
+            ctx.fillStyle = '#0d1b2a';
+            ctx.fill();
+            
+            // Draw grid if enabled
+            if (document.getElementById('show-grid').checked) {
+                drawHyperbolicGrid();
+            }
+            
+            // Draw horocycles if enabled
+            if (document.getElementById('show-horocycles').checked) {
+                drawHorocycles();
+            }
+            
+            // Disk border
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, diskRadius, 0, Math.PI * 2);
+            ctx.strokeStyle = '#334';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+            
+            // Draw geodesics
+            geodesics.forEach((geo, idx) => {
+                drawGeodesic(geo, geo === selectedGeodesic ? '#fff' : '#667eea', 2);
+            });
+            
+            // Draw parallel lines
+            parallelLines.forEach(pl => {
+                drawGeodesic(pl.geo, pl.color, 2);
+            });
+            
+            // Draw points
+            points.forEach(p => {
+                const cp = diskToCanvas(p.x, p.y);
+                ctx.beginPath();
+                ctx.arc(cp.x, cp.y, 6, 0, Math.PI * 2);
+                ctx.fillStyle = '#e74c3c';
+                ctx.fill();
+                ctx.strokeStyle = '#fff';
+                ctx.lineWidth = 2;
+                ctx.stroke();
+            });
+            
+            // Draw temp point
+            if (tempPoint) {
+                const cp = diskToCanvas(tempPoint.x, tempPoint.y);
+                ctx.beginPath();
+                ctx.arc(cp.x, cp.y, 6, 0, Math.PI * 2);
+                ctx.fillStyle = 'rgba(102, 126, 234, 0.5)';
+                ctx.fill();
+            }
+        }
+        
+        function drawHyperbolicGrid() {
+            ctx.strokeStyle = 'rgba(100, 100, 150, 0.15)';
+            ctx.lineWidth = 1;
+            
+            // Concentric circles (equidistant curves from center)
+            for (let r = 0.2; r < 1; r += 0.2) {
+                ctx.beginPath();
+                ctx.arc(centerX, centerY, r * diskRadius, 0, Math.PI * 2);
+                ctx.stroke();
+            }
+            
+            // Radial lines (geodesics through center)
+            for (let angle = 0; angle < Math.PI; angle += Math.PI / 8) {
+                ctx.beginPath();
+                ctx.moveTo(
+                    centerX + diskRadius * 0.99 * Math.cos(angle),
+                    centerY + diskRadius * 0.99 * Math.sin(angle)
+                );
+                ctx.lineTo(
+                    centerX - diskRadius * 0.99 * Math.cos(angle),
+                    centerY - diskRadius * 0.99 * Math.sin(angle)
+                );
+                ctx.stroke();
+            }
+        }
+        
+        function drawHorocycles() {
+            ctx.strokeStyle = 'rgba(46, 204, 113, 0.2)';
+            ctx.lineWidth = 1;
+            
+            // Horocycles are circles tangent to the boundary
+            for (let angle = 0; angle < Math.PI * 2; angle += Math.PI / 4) {
+                for (let size = 0.15; size < 0.4; size += 0.15) {
+                    const cx = (1 - size) * Math.cos(angle);
+                    const cy = (1 - size) * Math.sin(angle);
+                    const cp = diskToCanvas(cx, cy);
+                    ctx.beginPath();
+                    ctx.arc(cp.x, cp.y, size * diskRadius, 0, Math.PI * 2);
+                    ctx.stroke();
+                }
+            }
+        }
+        
+        function drawGeodesic(geo, color, width) {
+            ctx.strokeStyle = color;
+            ctx.lineWidth = width;
+            
+            if (geo.type === 'line') {
+                // Diameter - draw as straight line
+                const endpoints = getGeodesicEndpoints(geo);
+                const cp1 = diskToCanvas(endpoints[0].x, endpoints[0].y);
+                const cp2 = diskToCanvas(endpoints[1].x, endpoints[1].y);
+                ctx.beginPath();
+                ctx.moveTo(cp1.x, cp1.y);
+                ctx.lineTo(cp2.x, cp2.y);
+                ctx.stroke();
+            } else {
+                // Arc
+                const cp = diskToCanvas(geo.center.x, geo.center.y);
+                const r = geo.radius * diskRadius;
+                
+                // Find the angles where the arc intersects the disk boundary
+                const endpoints = getGeodesicEndpoints(geo);
+                if (endpoints.length >= 2) {
+                    const angle1 = Math.atan2(endpoints[0].y - geo.center.y, endpoints[0].x - geo.center.x);
+                    const angle2 = Math.atan2(endpoints[1].y - geo.center.y, endpoints[1].x - geo.center.x);
+                    
+                    ctx.beginPath();
+                    // Determine which way to draw the arc
+                    let startAngle = angle1;
+                    let endAngle = angle2;
+                    
+                    // Check if we need to go the other way
+                    const midAngle = (angle1 + angle2) / 2;
+                    const midX = geo.center.x + geo.radius * Math.cos(midAngle);
+                    const midY = geo.center.y + geo.radius * Math.sin(midAngle);
+                    
+                    if (midX * midX + midY * midY > 1) {
+                        // Wrong direction, use the other arc
+                        ctx.arc(cp.x, cp.y, r, startAngle, endAngle, true);
+                    } else {
+                        ctx.arc(cp.x, cp.y, r, startAngle, endAngle, false);
+                    }
+                    ctx.stroke();
+                }
+            }
+        }
+        
+        // Find parallel lines through a point
+        function findParallelLines(geo, point) {
+            const endpoints = getGeodesicEndpoints(geo);
+            if (endpoints.length < 2) return [];
+            
+            const parallels = [];
+            
+            // Limiting parallels - go through point and approach endpoints of original geodesic
+            for (const endpoint of endpoints) {
+                // Create geodesic from point to boundary point (limiting parallel)
+                const limitGeo = calculateGeodesic(point, { 
+                    x: endpoint.x * 0.999, 
+                    y: endpoint.y * 0.999 
+                });
+                parallels.push({ geo: limitGeo, color: '#f39c12' });
+            }
+            
+            // Add some ultra-parallel lines (lines that don't share ideal endpoints)
+            const angle1 = Math.atan2(endpoints[0].y, endpoints[0].x);
+            const angle2 = Math.atan2(endpoints[1].y, endpoints[1].x);
+            
+            // Find angles "beyond" the endpoints for ultra-parallels
+            const spread = 0.3;
+            for (let i = 1; i <= 2; i++) {
+                const beyondAngle1 = angle1 - spread * i;
+                const beyondAngle2 = angle2 + spread * i;
+                
+                const bp1 = { x: 0.999 * Math.cos(beyondAngle1), y: 0.999 * Math.sin(beyondAngle1) };
+                const bp2 = { x: 0.999 * Math.cos(beyondAngle2), y: 0.999 * Math.sin(beyondAngle2) };
+                
+                // Create geodesics from point towards these boundary points
+                const ultra1 = calculateGeodesic(point, bp1);
+                const ultra2 = calculateGeodesic(point, bp2);
+                
+                parallels.push({ geo: ultra1, color: `rgba(46, 204, 113, ${0.7 - i * 0.2})` });
+                parallels.push({ geo: ultra2, color: `rgba(46, 204, 113, ${0.7 - i * 0.2})` });
+            }
+            
+            return parallels;
+        }
+        
+        // Handle canvas click
+        canvas.addEventListener('click', (e) => {
+            const rect = canvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            const diskPoint = canvasToDisk(x, y);
+            
+            if (!isInsideDisk(diskPoint.x, diskPoint.y)) return;
+            
+            if (mode === 'line') {
+                if (!tempPoint) {
+                    tempPoint = diskPoint;
+                } else {
+                    const geo = calculateGeodesic(tempPoint, diskPoint);
+                    geodesics.push(geo);
+                    points.push(tempPoint);
+                    points.push(diskPoint);
+                    tempPoint = null;
+                }
+            } else if (mode === 'parallel') {
+                if (!selectedGeodesic) {
+                    // Find closest geodesic
+                    let minDist = Infinity;
+                    geodesics.forEach(geo => {
+                        // Simple distance check
+                        const dist = distanceToGeodesic(diskPoint, geo);
+                        if (dist < minDist && dist < 0.1) {
+                            minDist = dist;
+                            selectedGeodesic = geo;
+                        }
+                    });
+                } else {
+                    // Create parallel lines through this point
+                    parallelLines = findParallelLines(selectedGeodesic, diskPoint);
+                    points.push(diskPoint);
+                    selectedGeodesic = null;
+                }
+            } else if (mode === 'point') {
+                points.push(diskPoint);
+            }
+            
+            drawDisk();
+        });
+        
+        function distanceToGeodesic(point, geo) {
+            if (geo.type === 'line') {
+                // Distance to line through origin
+                const endpoints = getGeodesicEndpoints(geo);
+                const dx = endpoints[1].x - endpoints[0].x;
+                const dy = endpoints[1].y - endpoints[0].y;
+                const len = Math.sqrt(dx * dx + dy * dy);
+                return Math.abs((point.x - endpoints[0].x) * dy - (point.y - endpoints[0].y) * dx) / len;
+            } else {
+                // Distance to circle
+                const dx = point.x - geo.center.x;
+                const dy = point.y - geo.center.y;
+                const dist = Math.sqrt(dx * dx + dy * dy);
+                return Math.abs(dist - geo.radius);
+            }
+        }
+        
+        // Mode buttons
+        document.getElementById('mode-line').addEventListener('click', () => setMode('line'));
+        document.getElementById('mode-parallel').addEventListener('click', () => setMode('parallel'));
+        document.getElementById('mode-point').addEventListener('click', () => setMode('point'));
+        
+        function setMode(newMode) {
+            mode = newMode;
+            tempPoint = null;
+            selectedGeodesic = null;
+            document.querySelectorAll('.mode-buttons button').forEach(btn => btn.classList.remove('active'));
+            document.getElementById('mode-' + newMode).classList.add('active');
+            drawDisk();
+        }
+        
+        // Clear button
+        document.getElementById('btn-clear').addEventListener('click', () => {
+            points = [];
+            geodesics = [];
+            parallelLines = [];
+            tempPoint = null;
+            selectedGeodesic = null;
+            drawDisk();
+        });
+        
+        // Demo button
+        document.getElementById('btn-demo').addEventListener('click', () => {
+            points = [];
+            geodesics = [];
+            parallelLines = [];
+            
+            // Create a geodesic
+            const p1 = { x: -0.6, y: -0.3 };
+            const p2 = { x: 0.5, y: -0.4 };
+            const geo = calculateGeodesic(p1, p2);
+            geodesics.push(geo);
+            points.push(p1);
+            points.push(p2);
+            
+            // Create parallel lines through a point
+            const extPoint = { x: 0.1, y: 0.5 };
+            points.push(extPoint);
+            parallelLines = findParallelLines(geo, extPoint);
+            
+            drawDisk();
+        });
+        
+        // Checkbox listeners
+        document.getElementById('show-grid').addEventListener('change', drawDisk);
+        document.getElementById('show-horocycles').addEventListener('change', drawDisk);
+        
+        // Mouse move for hover effect
+        canvas.addEventListener('mousemove', (e) => {
+            const rect = canvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            const diskPoint = canvasToDisk(x, y);
+            
+            if (isInsideDisk(diskPoint.x, diskPoint.y)) {
+                canvas.style.cursor = 'crosshair';
+            } else {
+                canvas.style.cursor = 'default';
+            }
+        });
+        
+        // Initial draw
+        drawDisk();
+    </script>
+</body>
+</html>

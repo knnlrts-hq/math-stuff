@@ -1,0 +1,1497 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gödel's Incompleteness Theorem Explorer</title>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-primary: #0a0a0b;
+      --bg-secondary: #131316;
+      --bg-tertiary: #1a1a1f;
+      --bg-panel: #16161a;
+      --text-primary: #e8e6e3;
+      --text-secondary: #9a9a9a;
+      --text-muted: #5a5a5a;
+      --accent-gold: #d4a855;
+      --accent-gold-dim: #8a7038;
+      --accent-blue: #5b8dd9;
+      --accent-green: #5bb98c;
+      --accent-red: #d9735b;
+      --accent-purple: #9b7bd4;
+      --border-subtle: #2a2a30;
+      --border-active: #3a3a42;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Source Serif 4', Georgia, serif;
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      min-height: 100vh;
+      line-height: 1.6;
+    }
+
+    .container {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 2rem 1.5rem;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 2.5rem;
+      padding-bottom: 2rem;
+      border-bottom: 1px solid var(--border-subtle);
+    }
+
+    h1 {
+      font-size: 2.2rem;
+      font-weight: 600;
+      letter-spacing: -0.02em;
+      margin-bottom: 0.5rem;
+      color: var(--text-primary);
+    }
+
+    h1 span {
+      color: var(--accent-gold);
+    }
+
+    .subtitle {
+      color: var(--text-secondary);
+      font-size: 1.05rem;
+    }
+
+    /* Tab Navigation */
+    .tabs {
+      display: flex;
+      gap: 0.25rem;
+      margin-bottom: 1.5rem;
+      background: var(--bg-secondary);
+      padding: 0.35rem;
+      border-radius: 10px;
+      border: 1px solid var(--border-subtle);
+    }
+
+    .tab-btn {
+      flex: 1;
+      padding: 0.85rem 1rem;
+      background: transparent;
+      border: none;
+      color: var(--text-secondary);
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.8rem;
+      font-weight: 500;
+      cursor: pointer;
+      border-radius: 7px;
+      transition: all 0.2s ease;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .tab-btn:hover {
+      color: var(--text-primary);
+      background: var(--bg-tertiary);
+    }
+
+    .tab-btn.active {
+      background: var(--bg-tertiary);
+      color: var(--accent-gold);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+    }
+
+    .tab-number {
+      display: inline-block;
+      width: 1.4rem;
+      height: 1.4rem;
+      line-height: 1.4rem;
+      text-align: center;
+      background: var(--border-subtle);
+      border-radius: 4px;
+      margin-right: 0.5rem;
+      font-size: 0.7rem;
+    }
+
+    .tab-btn.active .tab-number {
+      background: var(--accent-gold-dim);
+      color: var(--text-primary);
+    }
+
+    /* Panel Styles */
+    .panel {
+      display: none;
+      background: var(--bg-panel);
+      border: 1px solid var(--border-subtle);
+      border-radius: 12px;
+      padding: 2rem;
+      animation: fadeIn 0.3s ease;
+    }
+
+    .panel.active {
+      display: block;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .panel-header {
+      margin-bottom: 1.75rem;
+      padding-bottom: 1.25rem;
+      border-bottom: 1px solid var(--border-subtle);
+    }
+
+    .panel-header h2 {
+      font-size: 1.4rem;
+      font-weight: 600;
+      margin-bottom: 0.5rem;
+      color: var(--text-primary);
+    }
+
+    .panel-header p {
+      color: var(--text-secondary);
+      font-size: 0.95rem;
+    }
+
+    /* Code/Math displays */
+    .mono {
+      font-family: 'IBM Plex Mono', monospace;
+    }
+
+    .formula-display {
+      background: var(--bg-primary);
+      border: 1px solid var(--border-subtle);
+      border-radius: 8px;
+      padding: 1.25rem 1.5rem;
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 1.1rem;
+      color: var(--accent-gold);
+      margin: 1rem 0;
+      overflow-x: auto;
+    }
+
+    .number-display {
+      background: var(--bg-primary);
+      border: 1px solid var(--border-subtle);
+      border-radius: 8px;
+      padding: 1.25rem 1.5rem;
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.85rem;
+      color: var(--accent-blue);
+      margin: 1rem 0;
+      word-break: break-all;
+      max-height: 150px;
+      overflow-y: auto;
+    }
+
+    .number-display.small {
+      font-size: 1rem;
+      max-height: none;
+    }
+
+    /* Input styles */
+    input[type="text"], textarea {
+      width: 100%;
+      background: var(--bg-primary);
+      border: 1px solid var(--border-subtle);
+      border-radius: 8px;
+      padding: 1rem 1.25rem;
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 1rem;
+      color: var(--text-primary);
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    input[type="text"]:focus, textarea:focus {
+      border-color: var(--accent-gold-dim);
+    }
+
+    textarea {
+      resize: vertical;
+      min-height: 100px;
+    }
+
+    label {
+      display: block;
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--text-secondary);
+      margin-bottom: 0.5rem;
+    }
+
+    .input-group {
+      margin-bottom: 1.5rem;
+    }
+
+    /* Button styles */
+    .btn {
+      background: var(--accent-gold-dim);
+      color: var(--text-primary);
+      border: none;
+      padding: 0.75rem 1.5rem;
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.8rem;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .btn:hover {
+      background: var(--accent-gold);
+      color: var(--bg-primary);
+    }
+
+    .btn-secondary {
+      background: var(--bg-tertiary);
+      border: 1px solid var(--border-subtle);
+    }
+
+    .btn-secondary:hover {
+      background: var(--border-active);
+      color: var(--text-primary);
+    }
+
+    .btn-group {
+      display: flex;
+      gap: 0.75rem;
+      flex-wrap: wrap;
+    }
+
+    /* Tables */
+    .symbol-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 1rem 0;
+      font-size: 0.9rem;
+    }
+
+    .symbol-table th {
+      text-align: left;
+      padding: 0.75rem 1rem;
+      background: var(--bg-primary);
+      color: var(--text-secondary);
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      border-bottom: 1px solid var(--border-subtle);
+    }
+
+    .symbol-table td {
+      padding: 0.75rem 1rem;
+      border-bottom: 1px solid var(--border-subtle);
+    }
+
+    .symbol-table tr:last-child td {
+      border-bottom: none;
+    }
+
+    .symbol-table .symbol {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 1.1rem;
+      color: var(--accent-gold);
+    }
+
+    .symbol-table .godel-num {
+      font-family: 'IBM Plex Mono', monospace;
+      color: var(--accent-blue);
+    }
+
+    .symbol-table .meaning {
+      color: var(--text-secondary);
+    }
+
+    /* Step displays */
+    .steps {
+      margin: 1.5rem 0;
+    }
+
+    .step {
+      display: flex;
+      gap: 1rem;
+      padding: 1.25rem;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-subtle);
+      border-radius: 8px;
+      margin-bottom: 0.75rem;
+      transition: all 0.3s;
+    }
+
+    .step.active {
+      border-color: var(--accent-gold-dim);
+      background: var(--bg-tertiary);
+    }
+
+    .step.completed {
+      opacity: 0.6;
+    }
+
+    .step-number {
+      width: 2rem;
+      height: 2rem;
+      background: var(--bg-tertiary);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+      flex-shrink: 0;
+    }
+
+    .step.active .step-number {
+      background: var(--accent-gold);
+      color: var(--bg-primary);
+    }
+
+    .step-content h4 {
+      font-size: 1rem;
+      margin-bottom: 0.35rem;
+      color: var(--text-primary);
+    }
+
+    .step-content p {
+      font-size: 0.9rem;
+      color: var(--text-secondary);
+    }
+
+    .step-content .formula {
+      margin-top: 0.75rem;
+      padding: 0.75rem 1rem;
+      background: var(--bg-primary);
+      border-radius: 6px;
+      font-family: 'IBM Plex Mono', monospace;
+      color: var(--accent-gold);
+    }
+
+    /* Landscape visualization */
+    .landscape {
+      position: relative;
+      height: 420px;
+      background: var(--bg-primary);
+      border: 1px solid var(--border-subtle);
+      border-radius: 12px;
+      margin: 1.5rem 0;
+      overflow: hidden;
+    }
+
+    .landscape-region {
+      position: absolute;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      transition: all 0.4s ease;
+      cursor: pointer;
+    }
+
+    .landscape-region:hover {
+      transform: scale(1.02);
+    }
+
+    .region-truth {
+      width: 380px;
+      height: 380px;
+      background: rgba(91, 185, 140, 0.08);
+      border: 2px solid rgba(91, 185, 140, 0.3);
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+    }
+
+    .region-provable {
+      width: 260px;
+      height: 260px;
+      background: rgba(91, 141, 217, 0.1);
+      border: 2px solid rgba(91, 141, 217, 0.4);
+      top: 80px;
+      left: 50%;
+      transform: translateX(-50%);
+    }
+
+    .region-axioms {
+      width: 100px;
+      height: 100px;
+      background: rgba(212, 168, 85, 0.15);
+      border: 2px solid rgba(212, 168, 85, 0.5);
+      top: 160px;
+      left: 50%;
+      transform: translateX(-50%);
+    }
+
+    .region-label {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      pointer-events: none;
+    }
+
+    .region-truth .region-label { color: var(--accent-green); }
+    .region-provable .region-label { color: var(--accent-blue); }
+    .region-axioms .region-label { color: var(--accent-gold); }
+
+    .godel-point {
+      position: absolute;
+      width: 14px;
+      height: 14px;
+      background: var(--accent-red);
+      border-radius: 50%;
+      top: 55px;
+      right: 120px;
+      box-shadow: 0 0 20px rgba(217, 115, 91, 0.6);
+      animation: pulse 2s infinite;
+      cursor: pointer;
+    }
+
+    .godel-point::after {
+      content: 'G';
+      position: absolute;
+      top: -22px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.85rem;
+      color: var(--accent-red);
+      font-weight: 600;
+    }
+
+    @keyframes pulse {
+      0%, 100% { box-shadow: 0 0 20px rgba(217, 115, 91, 0.6); }
+      50% { box-shadow: 0 0 30px rgba(217, 115, 91, 0.9); }
+    }
+
+    .landscape-legend {
+      position: absolute;
+      bottom: 15px;
+      left: 15px;
+      background: var(--bg-secondary);
+      padding: 1rem;
+      border-radius: 8px;
+      border: 1px solid var(--border-subtle);
+      font-size: 0.8rem;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin-bottom: 0.4rem;
+      font-family: 'IBM Plex Mono', monospace;
+    }
+
+    .legend-item:last-child { margin-bottom: 0; }
+
+    .legend-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+    }
+
+    .legend-dot.gold { background: var(--accent-gold); }
+    .legend-dot.blue { background: var(--accent-blue); }
+    .legend-dot.green { background: var(--accent-green); }
+    .legend-dot.red { background: var(--accent-red); }
+
+    /* Info boxes */
+    .info-box {
+      background: var(--bg-secondary);
+      border-left: 3px solid var(--accent-gold-dim);
+      padding: 1rem 1.25rem;
+      margin: 1.25rem 0;
+      border-radius: 0 8px 8px 0;
+    }
+
+    .info-box p {
+      font-size: 0.9rem;
+      color: var(--text-secondary);
+    }
+
+    .info-box .english {
+      color: var(--text-muted);
+      font-style: italic;
+      margin-top: 0.5rem;
+    }
+
+    /* Comparison cards */
+    .comparison-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 1rem;
+      margin: 1.5rem 0;
+    }
+
+    .comparison-card {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-subtle);
+      border-radius: 10px;
+      padding: 1.5rem;
+      transition: all 0.3s;
+    }
+
+    .comparison-card:hover {
+      border-color: var(--border-active);
+    }
+
+    .comparison-card h4 {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.9rem;
+      color: var(--accent-gold);
+      margin-bottom: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+    }
+
+    .comparison-card .statement {
+      font-style: italic;
+      color: var(--text-primary);
+      margin-bottom: 1rem;
+      padding-bottom: 1rem;
+      border-bottom: 1px solid var(--border-subtle);
+    }
+
+    .comparison-card .outcome {
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+    }
+
+    .comparison-card .outcome strong {
+      color: var(--accent-red);
+    }
+
+    .comparison-card .outcome.success strong {
+      color: var(--accent-green);
+    }
+
+    /* Breakdown display */
+    .breakdown {
+      margin: 1.5rem 0;
+    }
+
+    .breakdown-row {
+      display: flex;
+      align-items: center;
+      padding: 0.6rem 0;
+      border-bottom: 1px solid var(--border-subtle);
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.9rem;
+    }
+
+    .breakdown-row:last-child {
+      border-bottom: none;
+    }
+
+    .breakdown-symbol {
+      width: 50px;
+      color: var(--accent-gold);
+      font-size: 1.1rem;
+    }
+
+    .breakdown-arrow {
+      color: var(--text-muted);
+      margin: 0 1rem;
+    }
+
+    .breakdown-godel {
+      width: 50px;
+      color: var(--accent-blue);
+    }
+
+    .breakdown-prime {
+      color: var(--accent-purple);
+      margin-left: auto;
+    }
+
+    .breakdown-result {
+      margin-left: 1rem;
+      color: var(--text-secondary);
+    }
+
+    /* Final calculation */
+    .final-calc {
+      background: var(--bg-primary);
+      border: 1px solid var(--accent-gold-dim);
+      border-radius: 8px;
+      padding: 1.5rem;
+      margin-top: 1.5rem;
+    }
+
+    .final-calc h4 {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--accent-gold);
+      margin-bottom: 1rem;
+    }
+
+    .prime-product {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.9rem;
+      color: var(--text-secondary);
+      word-break: break-all;
+      margin-bottom: 1rem;
+    }
+
+    .prime-product span {
+      color: var(--accent-purple);
+    }
+
+    .digit-count {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      margin-top: 0.5rem;
+    }
+
+    /* Two column layout */
+    .two-col {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.5rem;
+      margin: 1.5rem 0;
+    }
+
+    @media (max-width: 768px) {
+      .two-col {
+        grid-template-columns: 1fr;
+      }
+      .tabs {
+        flex-wrap: wrap;
+      }
+      .tab-btn {
+        flex: 1 1 45%;
+      }
+    }
+
+    /* Section divider */
+    .section-divider {
+      height: 1px;
+      background: var(--border-subtle);
+      margin: 2rem 0;
+    }
+
+    /* Highlight text */
+    .hl-gold { color: var(--accent-gold); }
+    .hl-blue { color: var(--accent-blue); }
+    .hl-green { color: var(--accent-green); }
+    .hl-red { color: var(--accent-red); }
+    .hl-purple { color: var(--accent-purple); }
+
+    /* Error state */
+    .error-msg {
+      color: var(--accent-red);
+      font-size: 0.85rem;
+      margin-top: 0.5rem;
+      font-family: 'IBM Plex Mono', monospace;
+    }
+
+    /* Controls */
+    .controls {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 1.5rem;
+      padding-top: 1.5rem;
+      border-top: 1px solid var(--border-subtle);
+    }
+
+    .step-indicator {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.8rem;
+      color: var(--text-muted);
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>Gödel's <span>Incompleteness</span> Theorem</h1>
+      <p class="subtitle">An interactive exploration based on Nagel & Newman</p>
+    </header>
+
+    <nav class="tabs">
+      <button class="tab-btn active" data-tab="encoding">
+        <span class="tab-number">1</span>Encoding Lab
+      </button>
+      <button class="tab-btn" data-tab="self-reference">
+        <span class="tab-number">2</span>Self-Reference
+      </button>
+      <button class="tab-btn" data-tab="landscape">
+        <span class="tab-number">3</span>Proof Landscape
+      </button>
+      <button class="tab-btn" data-tab="paradoxes">
+        <span class="tab-number">4</span>Paradox Genealogy
+      </button>
+    </nav>
+
+    <!-- Panel 1: Encoding Laboratory -->
+    <section id="encoding" class="panel active">
+      <div class="panel-header">
+        <h2>The Encoding Laboratory</h2>
+        <p>Every formula can be converted to a unique number — and back again. This is the foundation of Gödel's proof.</p>
+      </div>
+
+      <div class="two-col">
+        <div>
+          <h3 style="font-size: 1rem; margin-bottom: 1rem; color: var(--text-secondary);">Constant Signs</h3>
+          <table class="symbol-table">
+            <thead>
+              <tr>
+                <th>Symbol</th>
+                <th>Gödel #</th>
+                <th>Meaning</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td class="symbol">∼</td><td class="godel-num">1</td><td class="meaning">not</td></tr>
+              <tr><td class="symbol">∨</td><td class="godel-num">2</td><td class="meaning">or</td></tr>
+              <tr><td class="symbol">⊃</td><td class="godel-num">3</td><td class="meaning">if...then</td></tr>
+              <tr><td class="symbol">∃</td><td class="godel-num">4</td><td class="meaning">there exists</td></tr>
+              <tr><td class="symbol">=</td><td class="godel-num">5</td><td class="meaning">equals</td></tr>
+              <tr><td class="symbol">0</td><td class="godel-num">6</td><td class="meaning">zero</td></tr>
+              <tr><td class="symbol">s</td><td class="godel-num">7</td><td class="meaning">successor of</td></tr>
+              <tr><td class="symbol">(</td><td class="godel-num">8</td><td class="meaning">left paren</td></tr>
+              <tr><td class="symbol">)</td><td class="godel-num">9</td><td class="meaning">right paren</td></tr>
+              <tr><td class="symbol">,</td><td class="godel-num">10</td><td class="meaning">comma</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div>
+          <h3 style="font-size: 1rem; margin-bottom: 1rem; color: var(--text-secondary);">Variables</h3>
+          <table class="symbol-table">
+            <thead>
+              <tr>
+                <th>Type</th>
+                <th>Example</th>
+                <th>Gödel #</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td class="meaning">Numerical</td><td class="symbol">x</td><td class="godel-num">11</td></tr>
+              <tr><td class="meaning">Numerical</td><td class="symbol">y</td><td class="godel-num">13</td></tr>
+              <tr><td class="meaning">Numerical</td><td class="symbol">z</td><td class="godel-num">17</td></tr>
+              <tr><td class="meaning">Sentential</td><td class="symbol">p</td><td class="godel-num">11² = 121</td></tr>
+              <tr><td class="meaning">Sentential</td><td class="symbol">q</td><td class="godel-num">13² = 169</td></tr>
+              <tr><td class="meaning">Predicate</td><td class="symbol">P</td><td class="godel-num">11³ = 1331</td></tr>
+              <tr><td class="meaning">Predicate</td><td class="symbol">Q</td><td class="godel-num">13³ = 2197</td></tr>
+            </tbody>
+          </table>
+          <div class="info-box" style="margin-top: 1rem;">
+            <p><strong>Rule:</strong> Variables use primes > 10. Numerical vars get the prime itself, sentential vars get the square, predicate vars get the cube.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="section-divider"></div>
+
+      <h3 style="font-size: 1.1rem; margin-bottom: 1rem;">Encode a Formula</h3>
+      
+      <div class="input-group">
+        <label for="formula-input">Enter a formula</label>
+        <input type="text" id="formula-input" placeholder="(∃x)(x=sy)" value="(∃x)(x=sy)">
+        <p style="font-size: 0.8rem; color: var(--text-muted); margin-top: 0.5rem;">
+          Use: ∼ ∨ ⊃ ∃ = 0 s ( ) , x y z p q P Q — or type ~ for ∼, V for ∨, > for ⊃, E for ∃
+        </p>
+      </div>
+
+      <div class="btn-group">
+        <button class="btn" id="encode-btn">Encode to Number</button>
+        <button class="btn btn-secondary" id="clear-btn">Clear</button>
+      </div>
+
+      <div id="encoding-result" style="display: none;">
+        <div class="breakdown" id="breakdown"></div>
+        <div class="final-calc">
+          <h4>Gödel Number (product of primes)</h4>
+          <div class="prime-product" id="prime-product"></div>
+          <div class="number-display" id="godel-number"></div>
+          <div class="digit-count" id="digit-count"></div>
+        </div>
+      </div>
+
+      <div class="section-divider"></div>
+
+      <h3 style="font-size: 1.1rem; margin-bottom: 1rem;">Decode a Number</h3>
+      
+      <div class="input-group">
+        <label for="number-input">Enter a Gödel number</label>
+        <input type="text" id="number-input" placeholder="243000000">
+      </div>
+
+      <div class="btn-group">
+        <button class="btn" id="decode-btn">Decode to Formula</button>
+        <button class="btn btn-secondary" id="example-decode-btn">Try 243,000,000</button>
+      </div>
+
+      <div id="decoding-result" style="display: none;">
+        <div class="breakdown" id="decode-breakdown"></div>
+        <div class="formula-display" id="decoded-formula"></div>
+        <div class="info-box">
+          <p id="decoded-english"></p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Panel 2: Self-Reference Machine -->
+    <section id="self-reference" class="panel">
+      <div class="panel-header">
+        <h2>The Self-Reference Machine</h2>
+        <p>How can a formula talk about itself? Through a brilliant substitution trick.</p>
+      </div>
+
+      <div class="info-box">
+        <p>Gödel constructed a formula G that essentially says: <strong>"This formula is not provable."</strong></p>
+        <p class="english">If G is provable, then it's false (contradiction). If G is not provable, then it's true but unprovable.</p>
+      </div>
+
+      <div class="steps" id="self-ref-steps">
+        <div class="step active" data-step="1">
+          <div class="step-number">1</div>
+          <div class="step-content">
+            <h4>Start with a formula containing variable y</h4>
+            <p>Consider: <span class="mono hl-gold">(x)∼Dem(x, sub(y, 13, y))</span></p>
+            <p class="english" style="color: var(--text-muted); margin-top: 0.5rem;">
+              "For all x: x is not a proof of the formula obtained by substituting into the formula with Gödel number y"
+            </p>
+            <div class="formula">(x)∼Dem(x, sub(y, 13, y))</div>
+          </div>
+        </div>
+
+        <div class="step" data-step="2">
+          <div class="step-number">2</div>
+          <div class="step-content">
+            <h4>Calculate its Gödel number</h4>
+            <p>This formula has a Gödel number. Call it <span class="mono hl-blue">n</span>.</p>
+            <p style="color: var(--text-muted); margin-top: 0.5rem;">
+              n is astronomically large, but it exists and is uniquely determined.
+            </p>
+          </div>
+        </div>
+
+        <div class="step" data-step="3">
+          <div class="step-number">3</div>
+          <div class="step-content">
+            <h4>Substitute n for y</h4>
+            <p>Replace every <span class="mono hl-gold">y</span> with the numeral for <span class="mono hl-blue">n</span>:</p>
+            <div class="formula">(x)∼Dem(x, sub(<span class="hl-blue">n</span>, 13, <span class="hl-blue">n</span>))</div>
+            <p style="color: var(--text-muted); margin-top: 0.5rem;">
+              This new formula is called <span class="hl-red">G</span>.
+            </p>
+          </div>
+        </div>
+
+        <div class="step" data-step="4">
+          <div class="step-number">4</div>
+          <div class="step-content">
+            <h4>The magic: G's Gödel number IS sub(n, 13, n)</h4>
+            <p>By construction, G was made by substituting n into the formula with Gödel number n.</p>
+            <p>So G's own Gödel number is exactly <span class="mono hl-purple">sub(n, 13, n)</span>.</p>
+          </div>
+        </div>
+
+        <div class="step" data-step="5">
+          <div class="step-number">5</div>
+          <div class="step-content">
+            <h4>G talks about itself!</h4>
+            <p>G says: "The formula with Gödel number sub(n, 13, n) is not provable."</p>
+            <p>But that formula <em>is</em> G itself.</p>
+            <div class="formula" style="border-color: var(--accent-red);">
+              G says: "<span class="hl-red">G</span> is not provable"
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="controls">
+        <button class="btn btn-secondary" id="prev-step" disabled>← Previous</button>
+        <span class="step-indicator">Step <span id="current-step">1</span> of 5</span>
+        <button class="btn" id="next-step">Next →</button>
+      </div>
+
+      <div class="section-divider"></div>
+
+      <h3 style="font-size: 1.1rem; margin-bottom: 1rem;">The Conclusion</h3>
+      
+      <div class="comparison-grid">
+        <div class="comparison-card">
+          <h4>If G is provable...</h4>
+          <div class="statement">Then what G says is false.</div>
+          <div class="outcome">
+            G says "G is not provable" — so G would be both provable AND not provable. <strong>Contradiction.</strong>
+          </div>
+        </div>
+        <div class="comparison-card">
+          <h4>If G is not provable...</h4>
+          <div class="statement">Then what G says is true.</div>
+          <div class="outcome success">
+            G is a <strong>true statement</strong> that cannot be proven within the system. Arithmetic is incomplete.
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Panel 3: Proof Landscape -->
+    <section id="landscape" class="panel">
+      <div class="panel-header">
+        <h2>The Proof Landscape</h2>
+        <p>Visualizing the relationship between axioms, theorems, and truth.</p>
+      </div>
+
+      <div class="landscape">
+        <div class="landscape-region region-truth">
+          <span class="region-label">All True Statements</span>
+        </div>
+        <div class="landscape-region region-provable">
+          <span class="region-label">Provable Theorems</span>
+        </div>
+        <div class="landscape-region region-axioms">
+          <span class="region-label">Axioms</span>
+        </div>
+        <div class="godel-point" id="godel-point" title="G: True but unprovable"></div>
+        
+        <div class="landscape-legend">
+          <div class="legend-item"><span class="legend-dot gold"></span> Axioms (assumed true)</div>
+          <div class="legend-item"><span class="legend-dot blue"></span> Provable from axioms</div>
+          <div class="legend-item"><span class="legend-dot green"></span> All true statements</div>
+          <div class="legend-item"><span class="legend-dot red"></span> G: true but unprovable</div>
+        </div>
+      </div>
+
+      <div class="info-box">
+        <p><strong>Key insight:</strong> Before Gödel, mathematicians hoped the blue circle could eventually encompass the green circle — that all truths could be derived from axioms. Gödel proved this is impossible.</p>
+      </div>
+
+      <div class="section-divider"></div>
+
+      <h3 style="font-size: 1.1rem; margin-bottom: 1rem;">What happens if we add G as an axiom?</h3>
+
+      <div class="comparison-grid">
+        <div class="comparison-card">
+          <h4>Original System</h4>
+          <div class="statement">G is true but unprovable</div>
+          <div class="outcome">
+            The system is <strong>incomplete</strong> — there exist truths it cannot reach.
+          </div>
+        </div>
+        <div class="comparison-card">
+          <h4>Extended System (with G as axiom)</h4>
+          <div class="statement">G is now provable (trivially)</div>
+          <div class="outcome">
+            But now we can construct <span class="hl-red">G'</span> — a <strong>new</strong> true-but-unprovable statement. The gap can never be closed.
+          </div>
+        </div>
+      </div>
+
+      <div class="info-box" style="border-color: var(--accent-red);">
+        <p><strong>Essential incompleteness:</strong> No matter how many axioms we add, there will always be true arithmetical statements that cannot be proven. This is not a flaw to be fixed — it's a fundamental feature of sufficiently powerful formal systems.</p>
+      </div>
+
+      <div class="section-divider"></div>
+
+      <h3 style="font-size: 1.1rem; margin-bottom: 1rem;">The Three Regions</h3>
+
+      <div class="comparison-grid">
+        <div class="comparison-card">
+          <h4 style="color: var(--accent-gold);">Axioms</h4>
+          <div class="outcome">
+            The starting points. Accepted without proof. In arithmetic: properties of 0, successor, addition, multiplication.
+          </div>
+        </div>
+        <div class="comparison-card">
+          <h4 style="color: var(--accent-blue);">Provable Theorems</h4>
+          <div class="outcome">
+            Everything derivable from axioms using rules of inference. What a computer could (in principle) verify.
+          </div>
+        </div>
+        <div class="comparison-card">
+          <h4 style="color: var(--accent-green);">All Truths</h4>
+          <div class="outcome">
+            Everything that's actually true about numbers. Gödel showed this is strictly larger than what's provable.
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Panel 4: Paradox Genealogy -->
+    <section id="paradoxes" class="panel">
+      <div class="panel-header">
+        <h2>The Paradox Genealogy</h2>
+        <p>Gödel's construction is inspired by ancient paradoxes — but carefully avoids their contradictions.</p>
+      </div>
+
+      <div class="comparison-grid">
+        <div class="comparison-card">
+          <h4>The Liar Paradox</h4>
+          <div class="statement">"This sentence is false."</div>
+          <div class="outcome">
+            If true, then it's false. If false, then it's true. <strong>Immediate contradiction</strong> — the sentence is meaningless.
+          </div>
+        </div>
+
+        <div class="comparison-card">
+          <h4>The Richard Paradox</h4>
+          <div class="statement">"The smallest number not definable in under 100 characters."</div>
+          <div class="outcome">
+            That description itself is under 100 characters! <strong>Contradiction</strong> from mixing language levels.
+          </div>
+        </div>
+
+        <div class="comparison-card">
+          <h4>Gödel's G</h4>
+          <div class="statement">"This formula is not provable."</div>
+          <div class="outcome success">
+            <strong>No contradiction!</strong> G is simply true and unprovable. "Unprovable" ≠ "false".
+          </div>
+        </div>
+      </div>
+
+      <div class="section-divider"></div>
+
+      <h3 style="font-size: 1.1rem; margin-bottom: 1rem;">Why Gödel Succeeds Where Others Fail</h3>
+
+      <table class="symbol-table">
+        <thead>
+          <tr>
+            <th>Paradox</th>
+            <th>Self-Reference About</th>
+            <th>Outcome</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="symbol" style="color: var(--accent-red);">Liar</td>
+            <td>Truth/Falsity</td>
+            <td class="meaning">Contradiction (meaningless)</td>
+          </tr>
+          <tr>
+            <td class="symbol" style="color: var(--accent-red);">Richard</td>
+            <td>Definability</td>
+            <td class="meaning">Contradiction (level confusion)</td>
+          </tr>
+          <tr>
+            <td class="symbol" style="color: var(--accent-green);">Gödel</td>
+            <td>Provability</td>
+            <td class="meaning">No contradiction — just incompleteness</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="info-box">
+        <p><strong>The crucial distinction:</strong> "False" and "unprovable" are not the same thing. A statement can be true without being provable. Gödel's construction exploits this gap.</p>
+      </div>
+
+      <div class="section-divider"></div>
+
+      <h3 style="font-size: 1.1rem; margin-bottom: 1rem;">The Richard Paradox in Detail</h3>
+
+      <div class="step" style="margin: 1rem 0;">
+        <div class="step-number">1</div>
+        <div class="step-content">
+          <h4>List all English definitions of numbers</h4>
+          <p>"The year of the Declaration of Independence" → 1776</p>
+          <p>"One plus one" → 2</p>
+        </div>
+      </div>
+
+      <div class="step" style="margin: 1rem 0;">
+        <div class="step-number">2</div>
+        <div class="step-content">
+          <h4>Order them and define "Richardian"</h4>
+          <p>The nth definition is "Richardian" if it does NOT define n.</p>
+        </div>
+      </div>
+
+      <div class="step" style="margin: 1rem 0;">
+        <div class="step-number">3</div>
+        <div class="step-content">
+          <h4>Ask: Is "Richardian" Richardian?</h4>
+          <p>If yes → it doesn't define its own position → no, it's not Richardian.</p>
+          <p>If no → it does define its own position → yes, it is Richardian.</p>
+          <p style="color: var(--accent-red); margin-top: 0.5rem;"><strong>Contradiction!</strong></p>
+        </div>
+      </div>
+
+      <div class="info-box">
+        <p><strong>Gödel's escape:</strong> Instead of talking about truth directly, G talks about <em>provability within a formal system</em>. The statement G is not inside the system judging itself — it's an arithmetical formula that <em>encodes</em> a claim about provability. The encoding (via Gödel numbers) keeps the levels separate.</p>
+      </div>
+
+      <div class="section-divider"></div>
+
+      <h3 style="font-size: 1.1rem; margin-bottom: 1rem;">Historical Context</h3>
+
+      <div class="comparison-grid">
+        <div class="comparison-card">
+          <h4>Before 1931</h4>
+          <div class="outcome">
+            Hilbert's Program aimed to prove all of mathematics consistent and complete using finite methods. The hope: every true statement could eventually be proven.
+          </div>
+        </div>
+        <div class="comparison-card">
+          <h4>After 1931</h4>
+          <div class="outcome">
+            Gödel showed this dream is impossible. Any consistent system powerful enough to express arithmetic is necessarily incomplete. Mathematics can never be fully captured by axioms.
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <script>
+    // Gödel encoding system
+    const CONSTANT_SIGNS = {
+      '∼': 1, '~': 1,
+      '∨': 2, 'V': 2,
+      '⊃': 3, '>': 3,
+      '∃': 4, 'E': 4,
+      '=': 5,
+      '0': 6,
+      's': 7,
+      '(': 8,
+      ')': 9,
+      ',': 10
+    };
+
+    const NUMERICAL_VARS = { 'x': 11, 'y': 13, 'z': 17 };
+    const SENTENTIAL_VARS = { 'p': 121, 'q': 169, 'r': 289 };
+    const PREDICATE_VARS = { 'P': 1331, 'Q': 2197, 'R': 4913 };
+
+    const REVERSE_CONSTANTS = {
+      1: '∼', 2: '∨', 3: '⊃', 4: '∃', 5: '=',
+      6: '0', 7: 's', 8: '(', 9: ')', 10: ','
+    };
+
+    const REVERSE_VARS = {
+      11: 'x', 13: 'y', 17: 'z',
+      121: 'p', 169: 'q', 289: 'r',
+      1331: 'P', 2197: 'Q', 4913: 'R'
+    };
+
+    const ENGLISH_MEANINGS = {
+      '∼': 'not', '∨': 'or', '⊃': 'if...then', '∃': 'there exists',
+      '=': 'equals', '0': 'zero', 's': 'successor of',
+      '(': '(', ')': ')', ',': ',',
+      'x': 'x', 'y': 'y', 'z': 'z',
+      'p': 'p', 'q': 'q', 'r': 'r',
+      'P': 'P', 'Q': 'Q', 'R': 'R'
+    };
+
+    // First 30 primes for encoding
+    const PRIMES = [2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59, 61, 67, 71, 73, 79, 83, 89, 97, 101, 103, 107, 109, 113];
+
+    function getGodelNumber(symbol) {
+      if (CONSTANT_SIGNS[symbol] !== undefined) return CONSTANT_SIGNS[symbol];
+      if (NUMERICAL_VARS[symbol] !== undefined) return NUMERICAL_VARS[symbol];
+      if (SENTENTIAL_VARS[symbol] !== undefined) return SENTENTIAL_VARS[symbol];
+      if (PREDICATE_VARS[symbol] !== undefined) return PREDICATE_VARS[symbol];
+      return null;
+    }
+
+    function getSymbolFromGodel(num) {
+      if (REVERSE_CONSTANTS[num]) return REVERSE_CONSTANTS[num];
+      if (REVERSE_VARS[num]) return REVERSE_VARS[num];
+      return null;
+    }
+
+    function normalizeFormula(formula) {
+      return formula
+        .replace(/~/g, '∼')
+        .replace(/V/g, '∨')
+        .replace(/>/g, '⊃')
+        .replace(/E/g, '∃')
+        .replace(/\s/g, '');
+    }
+
+    function encodeFormula(formula) {
+      const normalized = normalizeFormula(formula);
+      const symbols = normalized.split('');
+      const breakdown = [];
+      
+      for (let i = 0; i < symbols.length; i++) {
+        const symbol = symbols[i];
+        const godelNum = getGodelNumber(symbol);
+        if (godelNum === null) {
+          return { error: `Unknown symbol: "${symbol}"` };
+        }
+        breakdown.push({
+          symbol,
+          godelNum,
+          prime: PRIMES[i],
+          primeIndex: i
+        });
+      }
+
+      // Calculate the actual Gödel number using BigInt
+      let godelNumber = BigInt(1);
+      const primeFactors = [];
+      
+      for (const item of breakdown) {
+        const factor = BigInt(item.prime) ** BigInt(item.godelNum);
+        godelNumber *= factor;
+        primeFactors.push(`${item.prime}<sup>${item.godelNum}</sup>`);
+      }
+
+      return {
+        breakdown,
+        primeFactors,
+        godelNumber: godelNumber.toString()
+      };
+    }
+
+    function factorize(n) {
+      const factors = [];
+      let num = BigInt(n);
+      
+      for (const prime of PRIMES) {
+        if (num <= 1n) break;
+        const p = BigInt(prime);
+        let exp = 0;
+        while (num % p === 0n) {
+          exp++;
+          num /= p;
+        }
+        if (exp > 0) {
+          factors.push({ prime, exp });
+        } else if (factors.length > 0) {
+          // Prime skipped - not a valid Gödel number for a formula
+          return { error: `Invalid Gödel number: prime ${prime} is skipped` };
+        }
+      }
+      
+      if (num > 1n) {
+        return { error: `Number too large or has prime factors beyond our table` };
+      }
+      
+      return { factors };
+    }
+
+    function decodeNumber(numStr) {
+      try {
+        const result = factorize(numStr);
+        if (result.error) return result;
+        
+        const symbols = [];
+        const breakdown = [];
+        
+        for (const { prime, exp } of result.factors) {
+          const symbol = getSymbolFromGodel(exp);
+          if (!symbol) {
+            return { error: `Unknown Gödel number for exponent: ${exp}` };
+          }
+          symbols.push(symbol);
+          breakdown.push({ prime, exp, symbol });
+        }
+        
+        return {
+          formula: symbols.join(''),
+          breakdown
+        };
+      } catch (e) {
+        return { error: 'Invalid number format' };
+      }
+    }
+
+    function translateToEnglish(formula) {
+      // Simple pattern-based translation
+      const normalized = normalizeFormula(formula);
+      
+      if (normalized === '0=0') {
+        return 'Zero equals zero';
+      }
+      if (normalized === '(∃x)(x=sy)') {
+        return 'There exists an x such that x equals the successor of y (every number has a successor)';
+      }
+      if (normalized === '(∃x)(x=s0)') {
+        return 'There exists an x such that x equals the successor of 0 (the number 1 exists)';
+      }
+      
+      // Generic translation
+      let english = normalized;
+      english = english.replace(/∃/g, 'there exists ');
+      english = english.replace(/∼/g, 'not ');
+      english = english.replace(/∨/g, ' or ');
+      english = english.replace(/⊃/g, ' implies ');
+      english = english.replace(/=/g, ' = ');
+      english = english.replace(/s0/g, '1');
+      english = english.replace(/ss0/g, '2');
+      english = english.replace(/s/g, 'successor-of-');
+      
+      return english;
+    }
+
+    // Tab switching
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+        
+        btn.classList.add('active');
+        document.getElementById(btn.dataset.tab).classList.add('active');
+      });
+    });
+
+    // Encoding Lab
+    const formulaInput = document.getElementById('formula-input');
+    const encodeBtn = document.getElementById('encode-btn');
+    const clearBtn = document.getElementById('clear-btn');
+    const encodingResult = document.getElementById('encoding-result');
+    const breakdownEl = document.getElementById('breakdown');
+    const primeProductEl = document.getElementById('prime-product');
+    const godelNumberEl = document.getElementById('godel-number');
+    const digitCountEl = document.getElementById('digit-count');
+
+    encodeBtn.addEventListener('click', () => {
+      const formula = formulaInput.value.trim();
+      if (!formula) return;
+
+      const result = encodeFormula(formula);
+      
+      if (result.error) {
+        encodingResult.style.display = 'block';
+        breakdownEl.innerHTML = `<p class="error-msg">${result.error}</p>`;
+        primeProductEl.innerHTML = '';
+        godelNumberEl.innerHTML = '';
+        digitCountEl.innerHTML = '';
+        return;
+      }
+
+      // Build breakdown display
+      let breakdownHTML = '';
+      for (const item of result.breakdown) {
+        const meaning = ENGLISH_MEANINGS[item.symbol] || item.symbol;
+        breakdownHTML += `
+          <div class="breakdown-row">
+            <span class="breakdown-symbol">${item.symbol}</span>
+            <span class="breakdown-arrow">→</span>
+            <span class="breakdown-godel">${item.godelNum}</span>
+            <span class="breakdown-prime">${item.prime}<sup>${item.godelNum}</sup></span>
+            <span class="breakdown-result">(${meaning})</span>
+          </div>
+        `;
+      }
+      
+      breakdownEl.innerHTML = breakdownHTML;
+      primeProductEl.innerHTML = result.primeFactors.join(' × ');
+      godelNumberEl.textContent = result.godelNumber;
+      digitCountEl.textContent = `${result.godelNumber.length.toLocaleString()} digits`;
+      
+      encodingResult.style.display = 'block';
+    });
+
+    clearBtn.addEventListener('click', () => {
+      formulaInput.value = '';
+      encodingResult.style.display = 'none';
+    });
+
+    // Decoding
+    const numberInput = document.getElementById('number-input');
+    const decodeBtn = document.getElementById('decode-btn');
+    const exampleDecodeBtn = document.getElementById('example-decode-btn');
+    const decodingResult = document.getElementById('decoding-result');
+    const decodeBreakdownEl = document.getElementById('decode-breakdown');
+    const decodedFormulaEl = document.getElementById('decoded-formula');
+    const decodedEnglishEl = document.getElementById('decoded-english');
+
+    function performDecode(numStr) {
+      const cleanNum = numStr.replace(/,/g, '').trim();
+      const result = decodeNumber(cleanNum);
+      
+      if (result.error) {
+        decodingResult.style.display = 'block';
+        decodeBreakdownEl.innerHTML = `<p class="error-msg">${result.error}</p>`;
+        decodedFormulaEl.textContent = '';
+        decodedEnglishEl.textContent = '';
+        return;
+      }
+
+      let breakdownHTML = '';
+      for (const item of result.breakdown) {
+        breakdownHTML += `
+          <div class="breakdown-row">
+            <span class="breakdown-prime">${item.prime}<sup>${item.exp}</sup></span>
+            <span class="breakdown-arrow">→</span>
+            <span class="breakdown-godel">${item.exp}</span>
+            <span class="breakdown-arrow">→</span>
+            <span class="breakdown-symbol">${item.symbol}</span>
+          </div>
+        `;
+      }
+      
+      decodeBreakdownEl.innerHTML = breakdownHTML;
+      decodedFormulaEl.textContent = result.formula;
+      decodedEnglishEl.textContent = translateToEnglish(result.formula);
+      
+      decodingResult.style.display = 'block';
+    }
+
+    decodeBtn.addEventListener('click', () => {
+      performDecode(numberInput.value);
+    });
+
+    exampleDecodeBtn.addEventListener('click', () => {
+      numberInput.value = '243000000';
+      performDecode('243000000');
+    });
+
+    // Self-reference stepper
+    let currentStep = 1;
+    const totalSteps = 5;
+    const steps = document.querySelectorAll('#self-ref-steps .step');
+    const prevBtn = document.getElementById('prev-step');
+    const nextBtn = document.getElementById('next-step');
+    const stepIndicator = document.getElementById('current-step');
+
+    function updateSteps() {
+      steps.forEach((step, index) => {
+        const stepNum = index + 1;
+        step.classList.remove('active', 'completed');
+        if (stepNum === currentStep) {
+          step.classList.add('active');
+        } else if (stepNum < currentStep) {
+          step.classList.add('completed');
+        }
+      });
+      
+      stepIndicator.textContent = currentStep;
+      prevBtn.disabled = currentStep === 1;
+      nextBtn.disabled = currentStep === totalSteps;
+      nextBtn.textContent = currentStep === totalSteps ? 'Done' : 'Next →';
+    }
+
+    prevBtn.addEventListener('click', () => {
+      if (currentStep > 1) {
+        currentStep--;
+        updateSteps();
+      }
+    });
+
+    nextBtn.addEventListener('click', () => {
+      if (currentStep < totalSteps) {
+        currentStep++;
+        updateSteps();
+      }
+    });
+
+    // Initialize
+    updateSteps();
+
+    // Trigger initial encode on load
+    encodeBtn.click();
+  </script>
+</body>
+</html>

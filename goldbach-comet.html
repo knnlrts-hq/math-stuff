@@ -1,0 +1,680 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Goldbach's Comet Explorer</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #0a0a1a 0%, #1a1a3a 100%);
+            min-height: 100vh;
+            color: #e0e0e0;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        h1 {
+            text-align: center;
+            color: #fff;
+            margin-bottom: 8px;
+            font-size: 2rem;
+            text-shadow: 0 0 20px rgba(100, 150, 255, 0.5);
+        }
+        
+        .subtitle {
+            text-align: center;
+            color: #888;
+            margin-bottom: 24px;
+            font-size: 0.95rem;
+        }
+        
+        .controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 16px;
+            justify-content: center;
+            margin-bottom: 20px;
+            padding: 16px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+        
+        .control-group label {
+            font-size: 0.8rem;
+            color: #aaa;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        input[type="number"], select {
+            padding: 8px 12px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 6px;
+            background: rgba(0, 0, 0, 0.3);
+            color: #fff;
+            font-size: 1rem;
+            width: 140px;
+        }
+        
+        input[type="number"]:focus, select:focus {
+            outline: none;
+            border-color: #6699ff;
+            box-shadow: 0 0 10px rgba(100, 150, 255, 0.3);
+        }
+        
+        button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            background: linear-gradient(135deg, #4466aa, #6699ff);
+            color: #fff;
+            font-size: 0.95rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            align-self: flex-end;
+        }
+        
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(100, 150, 255, 0.4);
+        }
+        
+        .canvas-container {
+            background: rgba(0, 0, 0, 0.4);
+            border-radius: 12px;
+            padding: 16px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            margin-bottom: 20px;
+        }
+        
+        canvas {
+            display: block;
+            width: 100%;
+            border-radius: 8px;
+            cursor: crosshair;
+        }
+        
+        .info-panel {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 16px;
+        }
+        
+        .info-card {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            padding: 16px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .info-card h3 {
+            color: #6699ff;
+            margin-bottom: 12px;
+            font-size: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .info-card h3::before {
+            content: '';
+            width: 8px;
+            height: 8px;
+            background: #6699ff;
+            border-radius: 50%;
+        }
+        
+        .hover-info {
+            font-size: 1.5rem;
+            color: #fff;
+            margin-bottom: 8px;
+        }
+        
+        .hover-detail {
+            color: #aaa;
+            font-size: 0.9rem;
+            line-height: 1.6;
+        }
+        
+        .prime-pairs {
+            max-height: 150px;
+            overflow-y: auto;
+            font-family: 'Monaco', 'Consolas', monospace;
+            font-size: 0.85rem;
+            color: #88cc88;
+        }
+        
+        .prime-pairs::-webkit-scrollbar {
+            width: 6px;
+        }
+        
+        .prime-pairs::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 3px;
+        }
+        
+        .prime-pairs::-webkit-scrollbar-thumb {
+            background: rgba(100, 150, 255, 0.5);
+            border-radius: 3px;
+        }
+        
+        .stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+        
+        .stat-item {
+            background: rgba(0, 0, 0, 0.2);
+            padding: 10px;
+            border-radius: 6px;
+        }
+        
+        .stat-label {
+            font-size: 0.75rem;
+            color: #888;
+            text-transform: uppercase;
+        }
+        
+        .stat-value {
+            font-size: 1.2rem;
+            color: #fff;
+            font-weight: 600;
+        }
+        
+        .explanation {
+            line-height: 1.7;
+            color: #bbb;
+            font-size: 0.9rem;
+        }
+        
+        .explanation strong {
+            color: #6699ff;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #888;
+        }
+        
+        .zoom-hint {
+            text-align: center;
+            color: #666;
+            font-size: 0.8rem;
+            margin-top: 8px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>✨ Goldbach's Comet</h1>
+        <p class="subtitle">Exploring the number of ways even numbers can be written as sums of two primes</p>
+        
+        <div class="controls">
+            <div class="control-group">
+                <label>Range Start</label>
+                <input type="number" id="rangeStart" value="4" min="4" step="2">
+            </div>
+            <div class="control-group">
+                <label>Range End</label>
+                <input type="number" id="rangeEnd" value="10000" min="6" step="2">
+            </div>
+            <div class="control-group">
+                <label>Color Scheme</label>
+                <select id="colorScheme">
+                    <option value="comet">Comet (Blue-Gold)</option>
+                    <option value="heat">Heat Map</option>
+                    <option value="ocean">Ocean Depths</option>
+                    <option value="neon">Neon</option>
+                </select>
+            </div>
+            <div class="control-group">
+                <label>Point Size</label>
+                <select id="pointSize">
+                    <option value="1">Small</option>
+                    <option value="2" selected>Medium</option>
+                    <option value="3">Large</option>
+                </select>
+            </div>
+            <button onclick="generateComet()">Generate</button>
+        </div>
+        
+        <div class="canvas-container">
+            <canvas id="cometCanvas" height="500"></canvas>
+            <p class="zoom-hint">Hover over points to see details • Click and drag to pan • Scroll to zoom</p>
+        </div>
+        
+        <div class="info-panel">
+            <div class="info-card">
+                <h3>Hovered Point</h3>
+                <div class="hover-info" id="hoverInfo">Hover over the plot</div>
+                <div class="hover-detail" id="hoverDetail">Move your cursor over any point to see its Goldbach representations.</div>
+                <div class="prime-pairs" id="primePairs"></div>
+            </div>
+            
+            <div class="info-card">
+                <h3>Statistics</h3>
+                <div class="stats">
+                    <div class="stat-item">
+                        <div class="stat-label">Points Plotted</div>
+                        <div class="stat-value" id="statPoints">-</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-label">Max g(n)</div>
+                        <div class="stat-value" id="statMax">-</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-label">At n =</div>
+                        <div class="stat-value" id="statMaxN">-</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-label">Avg g(n)</div>
+                        <div class="stat-value" id="statAvg">-</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="info-card">
+                <h3>What is Goldbach's Comet?</h3>
+                <p class="explanation">
+                    <strong>Goldbach's conjecture</strong> (1742) states that every even integer greater than 2 can be expressed as the sum of two primes. 
+                    <br><br>
+                    The <strong>Goldbach function g(n)</strong> counts how many such representations exist for each even n. 
+                    <br><br>
+                    When plotted, these values form a distinctive pattern resembling a comet—hence the name. The "tail" shows fascinating structure related to prime distribution.
+                </p>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        const canvas = document.getElementById('cometCanvas');
+        const ctx = canvas.getContext('2d');
+        
+        let goldbachData = [];
+        let primeCache = new Set();
+        let maxPrimeChecked = 0;
+        
+        // View state for pan/zoom
+        let viewState = {
+            offsetX: 0,
+            offsetY: 0,
+            scale: 1,
+            isDragging: false,
+            lastX: 0,
+            lastY: 0
+        };
+        
+        // Color schemes
+        const colorSchemes = {
+            comet: (t, g, maxG) => {
+                const intensity = g / maxG;
+                const r = Math.floor(100 + intensity * 155);
+                const gr = Math.floor(150 + intensity * 80);
+                const b = Math.floor(255 - intensity * 100);
+                return `rgba(${r}, ${gr}, ${b}, 0.7)`;
+            },
+            heat: (t, g, maxG) => {
+                const intensity = g / maxG;
+                if (intensity < 0.33) {
+                    return `rgba(${Math.floor(intensity * 3 * 255)}, 0, 100, 0.7)`;
+                } else if (intensity < 0.66) {
+                    return `rgba(255, ${Math.floor((intensity - 0.33) * 3 * 255)}, 0, 0.7)`;
+                } else {
+                    return `rgba(255, 255, ${Math.floor((intensity - 0.66) * 3 * 255)}, 0.7)`;
+                }
+            },
+            ocean: (t, g, maxG) => {
+                const intensity = g / maxG;
+                const r = Math.floor(20 + intensity * 80);
+                const gr = Math.floor(100 + intensity * 155);
+                const b = Math.floor(150 + intensity * 105);
+                return `rgba(${r}, ${gr}, ${b}, 0.7)`;
+            },
+            neon: (t, g, maxG) => {
+                const hue = (t * 360 + g * 2) % 360;
+                return `hsla(${hue}, 100%, 60%, 0.7)`;
+            }
+        };
+        
+        function resizeCanvas() {
+            const container = canvas.parentElement;
+            canvas.width = container.clientWidth - 32;
+            if (goldbachData.length > 0) {
+                drawComet();
+            }
+        }
+        
+        function isPrime(n) {
+            if (n < 2) return false;
+            if (n === 2) return true;
+            if (n % 2 === 0) return false;
+            if (primeCache.has(n)) return true;
+            if (n <= maxPrimeChecked) return false;
+            
+            for (let i = 3; i <= Math.sqrt(n); i += 2) {
+                if (n % i === 0) return false;
+            }
+            return true;
+        }
+        
+        function buildPrimeCache(max) {
+            // Sieve of Eratosthenes
+            const sieve = new Array(max + 1).fill(true);
+            sieve[0] = sieve[1] = false;
+            
+            for (let i = 2; i <= Math.sqrt(max); i++) {
+                if (sieve[i]) {
+                    for (let j = i * i; j <= max; j += i) {
+                        sieve[j] = false;
+                    }
+                }
+            }
+            
+            primeCache.clear();
+            for (let i = 2; i <= max; i++) {
+                if (sieve[i]) primeCache.add(i);
+            }
+            maxPrimeChecked = max;
+        }
+        
+        function goldbachCount(n) {
+            let count = 0;
+            const pairs = [];
+            
+            for (let p = 2; p <= n / 2; p++) {
+                if (primeCache.has(p) && primeCache.has(n - p)) {
+                    count++;
+                    pairs.push([p, n - p]);
+                }
+            }
+            
+            return { count, pairs };
+        }
+        
+        function generateComet() {
+            const start = parseInt(document.getElementById('rangeStart').value) || 4;
+            let end = parseInt(document.getElementById('rangeEnd').value) || 10000;
+            
+            // Ensure even numbers
+            const evenStart = start % 2 === 0 ? start : start + 1;
+            const evenEnd = end % 2 === 0 ? end : end - 1;
+            
+            // Build prime cache
+            buildPrimeCache(evenEnd);
+            
+            goldbachData = [];
+            let maxG = 0;
+            let maxN = 0;
+            let sum = 0;
+            
+            for (let n = Math.max(4, evenStart); n <= evenEnd; n += 2) {
+                const result = goldbachCount(n);
+                goldbachData.push({ n, g: result.count, pairs: result.pairs });
+                
+                if (result.count > maxG) {
+                    maxG = result.count;
+                    maxN = n;
+                }
+                sum += result.count;
+            }
+            
+            // Update stats
+            document.getElementById('statPoints').textContent = goldbachData.length.toLocaleString();
+            document.getElementById('statMax').textContent = maxG;
+            document.getElementById('statMaxN').textContent = maxN.toLocaleString();
+            document.getElementById('statAvg').textContent = (sum / goldbachData.length).toFixed(2);
+            
+            // Reset view
+            viewState = { offsetX: 0, offsetY: 0, scale: 1, isDragging: false, lastX: 0, lastY: 0 };
+            
+            drawComet();
+        }
+        
+        function drawComet() {
+            if (goldbachData.length === 0) return;
+            
+            const width = canvas.width;
+            const height = canvas.height;
+            const padding = 50;
+            
+            // Clear canvas
+            ctx.fillStyle = '#0a0a1a';
+            ctx.fillRect(0, 0, width, height);
+            
+            const minN = goldbachData[0].n;
+            const maxN = goldbachData[goldbachData.length - 1].n;
+            const maxG = Math.max(...goldbachData.map(d => d.g));
+            
+            const colorScheme = document.getElementById('colorScheme').value;
+            const pointSize = parseInt(document.getElementById('pointSize').value);
+            const colorFn = colorSchemes[colorScheme];
+            
+            // Calculate visible range based on view state
+            const visibleWidth = (width - padding * 2) / viewState.scale;
+            const visibleHeight = (height - padding * 2) / viewState.scale;
+            
+            // Draw grid
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+            ctx.lineWidth = 1;
+            
+            // Vertical grid lines
+            const xStep = Math.pow(10, Math.floor(Math.log10((maxN - minN) / 5)));
+            for (let x = Math.ceil(minN / xStep) * xStep; x <= maxN; x += xStep) {
+                const screenX = padding + ((x - minN) / (maxN - minN)) * (width - padding * 2);
+                const transformedX = (screenX - padding) * viewState.scale + padding + viewState.offsetX;
+                
+                if (transformedX >= padding && transformedX <= width - padding) {
+                    ctx.beginPath();
+                    ctx.moveTo(transformedX, padding);
+                    ctx.lineTo(transformedX, height - padding);
+                    ctx.stroke();
+                }
+            }
+            
+            // Horizontal grid lines
+            const yStep = Math.pow(10, Math.floor(Math.log10(maxG / 5)));
+            for (let y = 0; y <= maxG; y += yStep) {
+                const screenY = height - padding - (y / maxG) * (height - padding * 2);
+                const transformedY = (screenY - padding) * viewState.scale + padding - viewState.offsetY;
+                
+                if (transformedY >= padding && transformedY <= height - padding) {
+                    ctx.beginPath();
+                    ctx.moveTo(padding, transformedY);
+                    ctx.lineTo(width - padding, transformedY);
+                    ctx.stroke();
+                }
+            }
+            
+            // Draw axes
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(padding, padding);
+            ctx.lineTo(padding, height - padding);
+            ctx.lineTo(width - padding, height - padding);
+            ctx.stroke();
+            
+            // Axis labels
+            ctx.fillStyle = '#888';
+            ctx.font = '12px -apple-system, sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText('Even number n', width / 2, height - 10);
+            
+            ctx.save();
+            ctx.translate(15, height / 2);
+            ctx.rotate(-Math.PI / 2);
+            ctx.fillText('g(n) = number of prime pair sums', 0, 0);
+            ctx.restore();
+            
+            // Draw points
+            ctx.save();
+            ctx.beginPath();
+            ctx.rect(padding, padding, width - padding * 2, height - padding * 2);
+            ctx.clip();
+            
+            goldbachData.forEach((d, i) => {
+                const baseX = padding + ((d.n - minN) / (maxN - minN)) * (width - padding * 2);
+                const baseY = height - padding - (d.g / maxG) * (height - padding * 2);
+                
+                const x = (baseX - padding) * viewState.scale + padding + viewState.offsetX;
+                const y = (baseY - padding) * viewState.scale + padding - viewState.offsetY;
+                
+                if (x >= padding - pointSize && x <= width - padding + pointSize &&
+                    y >= padding - pointSize && y <= height - padding + pointSize) {
+                    
+                    ctx.fillStyle = colorFn(i / goldbachData.length, d.g, maxG);
+                    ctx.beginPath();
+                    ctx.arc(x, y, pointSize, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            });
+            
+            ctx.restore();
+            
+            // Draw scale labels
+            ctx.fillStyle = '#666';
+            ctx.font = '10px -apple-system, sans-serif';
+            ctx.textAlign = 'right';
+            ctx.fillText(maxG.toString(), padding - 5, padding + 5);
+            ctx.fillText('0', padding - 5, height - padding + 5);
+            
+            ctx.textAlign = 'center';
+            ctx.fillText(minN.toString(), padding, height - padding + 15);
+            ctx.fillText(maxN.toLocaleString(), width - padding, height - padding + 15);
+        }
+        
+        function getDataAtPosition(mouseX, mouseY) {
+            if (goldbachData.length === 0) return null;
+            
+            const width = canvas.width;
+            const height = canvas.height;
+            const padding = 50;
+            
+            const minN = goldbachData[0].n;
+            const maxN = goldbachData[goldbachData.length - 1].n;
+            const maxG = Math.max(...goldbachData.map(d => d.g));
+            
+            let closest = null;
+            let closestDist = Infinity;
+            
+            goldbachData.forEach(d => {
+                const baseX = padding + ((d.n - minN) / (maxN - minN)) * (width - padding * 2);
+                const baseY = height - padding - (d.g / maxG) * (height - padding * 2);
+                
+                const x = (baseX - padding) * viewState.scale + padding + viewState.offsetX;
+                const y = (baseY - padding) * viewState.scale + padding - viewState.offsetY;
+                
+                const dist = Math.sqrt((x - mouseX) ** 2 + (y - mouseY) ** 2);
+                
+                if (dist < closestDist && dist < 20) {
+                    closestDist = dist;
+                    closest = d;
+                }
+            });
+            
+            return closest;
+        }
+        
+        // Event listeners
+        canvas.addEventListener('mousemove', (e) => {
+            const rect = canvas.getBoundingClientRect();
+            const mouseX = (e.clientX - rect.left) * (canvas.width / rect.width);
+            const mouseY = (e.clientY - rect.top) * (canvas.height / rect.height);
+            
+            if (viewState.isDragging) {
+                const dx = mouseX - viewState.lastX;
+                const dy = mouseY - viewState.lastY;
+                viewState.offsetX += dx;
+                viewState.offsetY -= dy;
+                viewState.lastX = mouseX;
+                viewState.lastY = mouseY;
+                drawComet();
+                return;
+            }
+            
+            const data = getDataAtPosition(mouseX, mouseY);
+            
+            if (data) {
+                document.getElementById('hoverInfo').textContent = `n = ${data.n.toLocaleString()}, g(n) = ${data.g}`;
+                document.getElementById('hoverDetail').textContent = `${data.n} can be written as a sum of two primes in ${data.g} way${data.g !== 1 ? 's' : ''}:`;
+                
+                const pairsDiv = document.getElementById('primePairs');
+                const displayPairs = data.pairs.slice(0, 50);
+                pairsDiv.innerHTML = displayPairs.map(p => `${p[0]} + ${p[1]}`).join('<br>');
+                if (data.pairs.length > 50) {
+                    pairsDiv.innerHTML += `<br><span style="color: #888">... and ${data.pairs.length - 50} more</span>`;
+                }
+            }
+        });
+        
+        canvas.addEventListener('mousedown', (e) => {
+            const rect = canvas.getBoundingClientRect();
+            viewState.isDragging = true;
+            viewState.lastX = (e.clientX - rect.left) * (canvas.width / rect.width);
+            viewState.lastY = (e.clientY - rect.top) * (canvas.height / rect.height);
+            canvas.style.cursor = 'grabbing';
+        });
+        
+        canvas.addEventListener('mouseup', () => {
+            viewState.isDragging = false;
+            canvas.style.cursor = 'crosshair';
+        });
+        
+        canvas.addEventListener('mouseleave', () => {
+            viewState.isDragging = false;
+            canvas.style.cursor = 'crosshair';
+        });
+        
+        canvas.addEventListener('wheel', (e) => {
+            e.preventDefault();
+            
+            const rect = canvas.getBoundingClientRect();
+            const mouseX = (e.clientX - rect.left) * (canvas.width / rect.width);
+            const mouseY = (e.clientY - rect.top) * (canvas.height / rect.height);
+            
+            const zoomFactor = e.deltaY > 0 ? 0.9 : 1.1;
+            const newScale = Math.max(0.5, Math.min(10, viewState.scale * zoomFactor));
+            
+            // Zoom toward mouse position
+            const scaleChange = newScale / viewState.scale;
+            viewState.offsetX = mouseX - (mouseX - viewState.offsetX) * scaleChange;
+            viewState.offsetY = -(mouseY - (mouseY + viewState.offsetY) * scaleChange);
+            viewState.scale = newScale;
+            
+            drawComet();
+        });
+        
+        // Double-click to reset view
+        canvas.addEventListener('dblclick', () => {
+            viewState = { offsetX: 0, offsetY: 0, scale: 1, isDragging: false, lastX: 0, lastY: 0 };
+            drawComet();
+        });
+        
+        window.addEventListener('resize', resizeCanvas);
+        
+        // Initialize
+        resizeCanvas();
+        generateComet();
+    </script>
+</body>
+</html>

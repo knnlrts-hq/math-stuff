@@ -1,0 +1,915 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bessel Functions Explorer</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            min-height: 100vh;
+            color: #e4e4e4;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 10px;
+            font-weight: 300;
+            font-size: 2rem;
+            color: #64ffda;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #8892b0;
+            margin-bottom: 25px;
+            font-size: 0.95rem;
+        }
+
+        .main-layout {
+            display: grid;
+            grid-template-columns: 280px 1fr;
+            gap: 20px;
+        }
+
+        .controls {
+            background: rgba(255,255,255,0.05);
+            border-radius: 12px;
+            padding: 20px;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .control-section {
+            margin-bottom: 20px;
+        }
+
+        .control-section h3 {
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #64ffda;
+            margin-bottom: 12px;
+            font-weight: 500;
+        }
+
+        .control-group {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            font-size: 0.85rem;
+            color: #a8b2d1;
+            margin-bottom: 6px;
+        }
+
+        input[type="range"] {
+            width: 100%;
+            height: 6px;
+            border-radius: 3px;
+            background: #233554;
+            outline: none;
+            -webkit-appearance: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: #64ffda;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        input[type="range"]::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
+        }
+
+        .value-display {
+            font-size: 0.8rem;
+            color: #64ffda;
+            text-align: right;
+            margin-top: 4px;
+        }
+
+        .checkbox-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .checkbox-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 10px;
+            background: rgba(100, 255, 218, 0.1);
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 0.85rem;
+        }
+
+        .checkbox-item:hover {
+            background: rgba(100, 255, 218, 0.2);
+        }
+
+        .checkbox-item input {
+            display: none;
+        }
+
+        .checkbox-item.active {
+            background: rgba(100, 255, 218, 0.3);
+            color: #64ffda;
+        }
+
+        .btn-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+
+        .btn {
+            padding: 8px 14px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            transition: all 0.2s;
+            background: #233554;
+            color: #a8b2d1;
+        }
+
+        .btn:hover {
+            background: #2d4a6f;
+            color: #64ffda;
+        }
+
+        .btn.active {
+            background: #64ffda;
+            color: #1a1a2e;
+        }
+
+        .canvas-container {
+            background: rgba(255,255,255,0.03);
+            border-radius: 12px;
+            padding: 15px;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        canvas {
+            width: 100%;
+            height: 450px;
+            display: block;
+            border-radius: 8px;
+            background: #0a192f;
+        }
+
+        .info-panel {
+            margin-top: 15px;
+            padding: 15px;
+            background: rgba(100, 255, 218, 0.05);
+            border-radius: 8px;
+            border-left: 3px solid #64ffda;
+        }
+
+        .info-panel h4 {
+            color: #64ffda;
+            margin-bottom: 8px;
+            font-weight: 500;
+        }
+
+        .info-panel p {
+            font-size: 0.85rem;
+            line-height: 1.6;
+            color: #a8b2d1;
+        }
+
+        .formula {
+            font-family: 'Cambria Math', 'Times New Roman', serif;
+            font-style: italic;
+            background: rgba(0,0,0,0.3);
+            padding: 8px 12px;
+            border-radius: 4px;
+            margin: 10px 0;
+            display: inline-block;
+            color: #ccd6f6;
+        }
+
+        .cursor-info {
+            margin-top: 10px;
+            padding: 10px;
+            background: rgba(0,0,0,0.2);
+            border-radius: 6px;
+            font-family: monospace;
+            font-size: 0.85rem;
+            min-height: 60px;
+        }
+
+        .zeros-display {
+            margin-top: 10px;
+            padding: 10px;
+            background: rgba(0,0,0,0.2);
+            border-radius: 6px;
+            font-size: 0.8rem;
+            max-height: 100px;
+            overflow-y: auto;
+        }
+
+        .zeros-display span {
+            display: inline-block;
+            padding: 2px 6px;
+            margin: 2px;
+            background: rgba(100, 255, 218, 0.2);
+            border-radius: 3px;
+        }
+
+        .animation-controls {
+            display: flex;
+            gap: 8px;
+            margin-top: 10px;
+        }
+
+        @media (max-width: 900px) {
+            .main-layout {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Bessel Functions Explorer</h1>
+        <p class="subtitle">Interactive visualization of Bessel functions of the first and second kind</p>
+        
+        <div class="main-layout">
+            <div class="controls">
+                <div class="control-section">
+                    <h3>Function Type</h3>
+                    <div class="btn-group">
+                        <button class="btn active" data-type="J">Jₙ(x) First Kind</button>
+                        <button class="btn" data-type="Y">Yₙ(x) Second Kind</button>
+                        <button class="btn" data-type="both">Both</button>
+                    </div>
+                </div>
+
+                <div class="control-section">
+                    <h3>Orders to Display</h3>
+                    <div class="checkbox-group" id="orderCheckboxes">
+                        <!-- Generated by JS -->
+                    </div>
+                </div>
+
+                <div class="control-section">
+                    <h3>View Settings</h3>
+                    <div class="control-group">
+                        <label>X Range: <span id="xRangeVal">0 to 20</span></label>
+                        <input type="range" id="xRange" min="5" max="50" value="20">
+                    </div>
+                    <div class="control-group">
+                        <label>Y Range: ±<span id="yRangeVal">1.5</span></label>
+                        <input type="range" id="yRange" min="5" max="30" value="15" step="1">
+                    </div>
+                    <div class="control-group">
+                        <label>Resolution: <span id="resVal">500</span> points</label>
+                        <input type="range" id="resolution" min="200" max="1000" value="500" step="50">
+                    </div>
+                </div>
+
+                <div class="control-section">
+                    <h3>Animation</h3>
+                    <div class="control-group">
+                        <label>Animate Order (continuous): <span id="animOrderVal">0.00</span></label>
+                        <input type="range" id="animOrder" min="0" max="5" value="0" step="0.01">
+                    </div>
+                    <div class="animation-controls">
+                        <button class="btn" id="playBtn">▶ Play</button>
+                        <button class="btn" id="stopBtn">⏹ Stop</button>
+                    </div>
+                </div>
+
+                <div class="control-section">
+                    <h3>Zeros of Jₙ(x)</h3>
+                    <div class="zeros-display" id="zerosDisplay">
+                        Select an order to see zeros
+                    </div>
+                </div>
+            </div>
+
+            <div class="canvas-container">
+                <canvas id="canvas"></canvas>
+                <div class="cursor-info" id="cursorInfo">
+                    Hover over the graph to see values<br>
+                    Click to mark a point
+                </div>
+                <div class="info-panel">
+                    <h4>About Bessel Functions</h4>
+                    <p>
+                        Bessel functions are solutions to Bessel's differential equation:
+                    </p>
+                    <div class="formula">x²y'' + xy' + (x² - n²)y = 0</div>
+                    <p>
+                        <strong>Jₙ(x)</strong> - Bessel function of the first kind, regular at the origin<br>
+                        <strong>Yₙ(x)</strong> - Bessel function of the second kind, singular at x=0<br><br>
+                        These functions appear in problems with cylindrical symmetry: wave propagation, heat conduction, vibrating membranes, and electromagnetic theory.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Bessel function implementations
+        function besselJ(n, x) {
+            if (x === 0) {
+                return n === 0 ? 1 : 0;
+            }
+            
+            // For integer orders, use series expansion for small x
+            if (Math.abs(x) < 8) {
+                return besselJSeries(n, x);
+            }
+            
+            // For large x, use asymptotic expansion
+            return besselJAsymptotic(n, x);
+        }
+
+        function besselJSeries(n, x) {
+            const halfX = x / 2;
+            let sum = 0;
+            let term = Math.pow(halfX, n) / gamma(n + 1);
+            const halfXSq = -halfX * halfX;
+            
+            for (let k = 0; k < 50; k++) {
+                sum += term;
+                term *= halfXSq / ((k + 1) * (n + k + 1));
+                if (Math.abs(term) < 1e-15 * Math.abs(sum)) break;
+            }
+            
+            return sum;
+        }
+
+        function besselJAsymptotic(n, x) {
+            const phase = x - (n / 2 + 0.25) * Math.PI;
+            const amplitude = Math.sqrt(2 / (Math.PI * x));
+            
+            // First few terms of asymptotic expansion
+            const mu = 4 * n * n;
+            const x8 = 8 * x;
+            
+            let P = 1;
+            let Q = (mu - 1) / x8;
+            
+            const term2 = (mu - 1) * (mu - 9) / (2 * x8 * x8);
+            P -= term2;
+            
+            const term3 = (mu - 1) * (mu - 9) * (mu - 25) / (6 * x8 * x8 * x8);
+            Q -= term3;
+            
+            return amplitude * (P * Math.cos(phase) - Q * Math.sin(phase));
+        }
+
+        function besselY(n, x) {
+            if (x <= 0) return NaN;
+            
+            if (x < 8) {
+                return besselYSeries(n, x);
+            }
+            
+            return besselYAsymptotic(n, x);
+        }
+
+        function besselYSeries(n, x) {
+            const gamma_euler = 0.5772156649015329;
+            
+            if (Math.abs(n - Math.round(n)) < 1e-10) {
+                // Integer order
+                const nInt = Math.round(n);
+                const halfX = x / 2;
+                const logHalfX = Math.log(halfX);
+                
+                // Y_n = (2/π) * J_n * ln(x/2) - (1/π) * sum terms
+                let result = (2 / Math.PI) * besselJ(nInt, x) * logHalfX;
+                
+                // First sum (k = 0 to n-1)
+                if (nInt > 0) {
+                    let sum1 = 0;
+                    for (let k = 0; k < nInt; k++) {
+                        sum1 += gamma(nInt - k) / gamma(k + 1) * Math.pow(halfX, 2 * k - nInt);
+                    }
+                    result -= sum1 / Math.PI;
+                }
+                
+                // Second sum
+                let sum2 = 0;
+                let term = Math.pow(halfX, nInt) / gamma(nInt + 1);
+                const halfXSq = -halfX * halfX;
+                
+                for (let k = 0; k < 50; k++) {
+                    const psi_k = psi(k + 1);
+                    const psi_nk = psi(nInt + k + 1);
+                    sum2 += term * (psi_k + psi_nk);
+                    term *= halfXSq / ((k + 1) * (nInt + k + 1));
+                    if (Math.abs(term) < 1e-15) break;
+                }
+                
+                result -= sum2 / Math.PI;
+                
+                return result;
+            }
+            
+            // Non-integer order: use Y_n = (J_n cos(nπ) - J_{-n}) / sin(nπ)
+            const sinNPi = Math.sin(n * Math.PI);
+            if (Math.abs(sinNPi) < 1e-10) {
+                return besselYSeries(Math.round(n), x);
+            }
+            
+            return (besselJ(n, x) * Math.cos(n * Math.PI) - besselJ(-n, x)) / sinNPi;
+        }
+
+        function besselYAsymptotic(n, x) {
+            const phase = x - (n / 2 + 0.25) * Math.PI;
+            const amplitude = Math.sqrt(2 / (Math.PI * x));
+            
+            const mu = 4 * n * n;
+            const x8 = 8 * x;
+            
+            let P = 1;
+            let Q = (mu - 1) / x8;
+            
+            const term2 = (mu - 1) * (mu - 9) / (2 * x8 * x8);
+            P -= term2;
+            
+            const term3 = (mu - 1) * (mu - 9) * (mu - 25) / (6 * x8 * x8 * x8);
+            Q -= term3;
+            
+            return amplitude * (P * Math.sin(phase) + Q * Math.cos(phase));
+        }
+
+        // Gamma function (Lanczos approximation)
+        function gamma(z) {
+            if (z < 0.5) {
+                return Math.PI / (Math.sin(Math.PI * z) * gamma(1 - z));
+            }
+            
+            z -= 1;
+            const g = 7;
+            const c = [
+                0.99999999999980993,
+                676.5203681218851,
+                -1259.1392167224028,
+                771.32342877765313,
+                -176.61502916214059,
+                12.507343278686905,
+                -0.13857109526572012,
+                9.9843695780195716e-6,
+                1.5056327351493116e-7
+            ];
+            
+            let x = c[0];
+            for (let i = 1; i < g + 2; i++) {
+                x += c[i] / (z + i);
+            }
+            
+            const t = z + g + 0.5;
+            return Math.sqrt(2 * Math.PI) * Math.pow(t, z + 0.5) * Math.exp(-t) * x;
+        }
+
+        // Digamma function (psi)
+        function psi(x) {
+            if (x <= 0 && x === Math.floor(x)) {
+                return NaN;
+            }
+            
+            let result = 0;
+            
+            // Use recurrence to shift x to a larger value
+            while (x < 6) {
+                result -= 1 / x;
+                x += 1;
+            }
+            
+            // Asymptotic expansion
+            result += Math.log(x) - 1 / (2 * x);
+            const x2 = x * x;
+            result -= 1 / (12 * x2);
+            result += 1 / (120 * x2 * x2);
+            result -= 1 / (252 * x2 * x2 * x2);
+            
+            return result;
+        }
+
+        // Find zeros of Bessel J_n
+        function findBesselZeros(n, count = 10) {
+            const zeros = [];
+            let x = (n < 1) ? 0.5 : n;
+            
+            for (let i = 0; i < count && x < 100; i++) {
+                // Newton-Raphson
+                for (let iter = 0; iter < 50; iter++) {
+                    const jn = besselJ(n, x);
+                    const jnPrime = n / x * besselJ(n, x) - besselJ(n + 1, x);
+                    
+                    if (Math.abs(jnPrime) < 1e-12) break;
+                    
+                    const dx = jn / jnPrime;
+                    x -= dx;
+                    
+                    if (Math.abs(dx) < 1e-10) break;
+                }
+                
+                if (x > 0 && Math.abs(besselJ(n, x)) < 1e-8) {
+                    zeros.push(x);
+                }
+                
+                x += Math.PI * 0.9;
+            }
+            
+            return zeros;
+        }
+
+        // Canvas setup
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        
+        function resizeCanvas() {
+            const rect = canvas.getBoundingClientRect();
+            canvas.width = rect.width * window.devicePixelRatio;
+            canvas.height = rect.height * window.devicePixelRatio;
+            ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+        }
+        
+        resizeCanvas();
+        window.addEventListener('resize', () => {
+            resizeCanvas();
+            draw();
+        });
+
+        // State
+        const state = {
+            type: 'J',
+            orders: [0, 1, 2],
+            xMax: 20,
+            yMax: 1.5,
+            resolution: 500,
+            animOrder: 0,
+            animating: false,
+            markedPoints: []
+        };
+
+        // Colors for different orders
+        const colors = [
+            '#64ffda', // cyan
+            '#f78c6c', // orange
+            '#c792ea', // purple
+            '#82aaff', // blue
+            '#c3e88d', // green
+            '#ff5370', // red
+            '#ffcb6b', // yellow
+            '#89ddff', // light blue
+        ];
+
+        // Generate order checkboxes
+        const orderCheckboxes = document.getElementById('orderCheckboxes');
+        for (let i = 0; i <= 5; i++) {
+            const item = document.createElement('div');
+            item.className = 'checkbox-item' + (state.orders.includes(i) ? ' active' : '');
+            item.innerHTML = `<input type="checkbox" value="${i}" ${state.orders.includes(i) ? 'checked' : ''}><span style="color: ${colors[i]}">n=${i}</span>`;
+            item.addEventListener('click', () => {
+                const checkbox = item.querySelector('input');
+                checkbox.checked = !checkbox.checked;
+                item.classList.toggle('active');
+                
+                if (checkbox.checked) {
+                    state.orders.push(parseInt(checkbox.value));
+                } else {
+                    state.orders = state.orders.filter(o => o !== parseInt(checkbox.value));
+                }
+                state.orders.sort((a, b) => a - b);
+                updateZerosDisplay();
+                draw();
+            });
+            orderCheckboxes.appendChild(item);
+        }
+
+        // Function type buttons
+        document.querySelectorAll('[data-type]').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('[data-type]').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                state.type = btn.dataset.type;
+                draw();
+            });
+        });
+
+        // Range controls
+        document.getElementById('xRange').addEventListener('input', (e) => {
+            state.xMax = parseInt(e.target.value);
+            document.getElementById('xRangeVal').textContent = `0 to ${state.xMax}`;
+            draw();
+        });
+
+        document.getElementById('yRange').addEventListener('input', (e) => {
+            state.yMax = parseInt(e.target.value) / 10;
+            document.getElementById('yRangeVal').textContent = state.yMax.toFixed(1);
+            draw();
+        });
+
+        document.getElementById('resolution').addEventListener('input', (e) => {
+            state.resolution = parseInt(e.target.value);
+            document.getElementById('resVal').textContent = state.resolution;
+            draw();
+        });
+
+        document.getElementById('animOrder').addEventListener('input', (e) => {
+            state.animOrder = parseFloat(e.target.value);
+            document.getElementById('animOrderVal').textContent = state.animOrder.toFixed(2);
+            draw();
+        });
+
+        // Animation
+        let animationFrame;
+        document.getElementById('playBtn').addEventListener('click', () => {
+            state.animating = true;
+            animate();
+        });
+
+        document.getElementById('stopBtn').addEventListener('click', () => {
+            state.animating = false;
+            if (animationFrame) cancelAnimationFrame(animationFrame);
+        });
+
+        function animate() {
+            if (!state.animating) return;
+            
+            state.animOrder += 0.02;
+            if (state.animOrder > 5) state.animOrder = 0;
+            
+            document.getElementById('animOrder').value = state.animOrder;
+            document.getElementById('animOrderVal').textContent = state.animOrder.toFixed(2);
+            
+            draw();
+            animationFrame = requestAnimationFrame(animate);
+        }
+
+        // Zeros display
+        function updateZerosDisplay() {
+            const zerosDisplay = document.getElementById('zerosDisplay');
+            if (state.orders.length === 0) {
+                zerosDisplay.textContent = 'Select an order to see zeros';
+                return;
+            }
+            
+            let html = '';
+            state.orders.forEach(n => {
+                const zeros = findBesselZeros(n, 5);
+                html += `<div style="margin-bottom: 5px;"><strong style="color: ${colors[n]}">J${n}:</strong> `;
+                html += zeros.map(z => `<span>${z.toFixed(3)}</span>`).join(' ');
+                html += '</div>';
+            });
+            zerosDisplay.innerHTML = html;
+        }
+        updateZerosDisplay();
+
+        // Mouse interaction
+        let mouseX = null, mouseY = null;
+        
+        canvas.addEventListener('mousemove', (e) => {
+            const rect = canvas.getBoundingClientRect();
+            mouseX = e.clientX - rect.left;
+            mouseY = e.clientY - rect.top;
+            draw();
+            updateCursorInfo();
+        });
+
+        canvas.addEventListener('mouseleave', () => {
+            mouseX = null;
+            mouseY = null;
+            draw();
+        });
+
+        canvas.addEventListener('click', () => {
+            if (mouseX !== null) {
+                const rect = canvas.getBoundingClientRect();
+                const x = (mouseX / rect.width) * state.xMax;
+                const y = state.yMax - (mouseY / rect.height) * 2 * state.yMax;
+                state.markedPoints.push({ x, y });
+                if (state.markedPoints.length > 5) state.markedPoints.shift();
+                draw();
+            }
+        });
+
+        function updateCursorInfo() {
+            const cursorInfo = document.getElementById('cursorInfo');
+            if (mouseX === null) {
+                cursorInfo.innerHTML = 'Hover over the graph to see values<br>Click to mark a point';
+                return;
+            }
+            
+            const rect = canvas.getBoundingClientRect();
+            const x = (mouseX / rect.width) * state.xMax;
+            
+            let html = `<strong>x = ${x.toFixed(4)}</strong><br>`;
+            
+            state.orders.forEach(n => {
+                const jVal = besselJ(n, x);
+                const yVal = besselY(n, x);
+                html += `<span style="color: ${colors[n]}">J${n}(x) = ${jVal.toFixed(6)}</span>`;
+                if (state.type === 'both' || state.type === 'Y') {
+                    html += ` | Y${n}(x) = ${isNaN(yVal) ? '∞' : yVal.toFixed(6)}`;
+                }
+                html += '<br>';
+            });
+            
+            if (state.animOrder > 0) {
+                html += `<span style="color: #fff">J${state.animOrder.toFixed(2)}(x) = ${besselJ(state.animOrder, x).toFixed(6)}</span>`;
+            }
+            
+            cursorInfo.innerHTML = html;
+        }
+
+        // Main draw function
+        function draw() {
+            const rect = canvas.getBoundingClientRect();
+            const width = rect.width;
+            const height = rect.height;
+            
+            ctx.clearRect(0, 0, width, height);
+            
+            // Background
+            ctx.fillStyle = '#0a192f';
+            ctx.fillRect(0, 0, width, height);
+            
+            // Grid
+            ctx.strokeStyle = 'rgba(100, 255, 218, 0.1)';
+            ctx.lineWidth = 1;
+            
+            // Vertical grid lines
+            for (let x = 0; x <= state.xMax; x += state.xMax > 30 ? 5 : (state.xMax > 15 ? 2 : 1)) {
+                const px = (x / state.xMax) * width;
+                ctx.beginPath();
+                ctx.moveTo(px, 0);
+                ctx.lineTo(px, height);
+                ctx.stroke();
+                
+                ctx.fillStyle = 'rgba(168, 178, 209, 0.5)';
+                ctx.font = '10px sans-serif';
+                ctx.fillText(x.toString(), px + 2, height - 5);
+            }
+            
+            // Horizontal grid lines
+            const yStep = state.yMax > 2 ? 1 : 0.5;
+            for (let y = -state.yMax; y <= state.yMax; y += yStep) {
+                const py = height / 2 - (y / state.yMax) * (height / 2);
+                ctx.beginPath();
+                ctx.moveTo(0, py);
+                ctx.lineTo(width, py);
+                ctx.stroke();
+                
+                if (Math.abs(y) > 0.01) {
+                    ctx.fillStyle = 'rgba(168, 178, 209, 0.5)';
+                    ctx.fillText(y.toFixed(1), 5, py - 2);
+                }
+            }
+            
+            // X-axis (y=0)
+            ctx.strokeStyle = 'rgba(100, 255, 218, 0.3)';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(0, height / 2);
+            ctx.lineTo(width, height / 2);
+            ctx.stroke();
+            
+            // Draw functions
+            const drawFunction = (func, n, color, dash = []) => {
+                ctx.strokeStyle = color;
+                ctx.lineWidth = 2;
+                ctx.setLineDash(dash);
+                ctx.beginPath();
+                
+                let started = false;
+                for (let i = 0; i <= state.resolution; i++) {
+                    const x = (i / state.resolution) * state.xMax;
+                    const y = func(n, x);
+                    
+                    if (isNaN(y) || !isFinite(y) || Math.abs(y) > state.yMax * 2) {
+                        started = false;
+                        continue;
+                    }
+                    
+                    const px = (x / state.xMax) * width;
+                    const py = height / 2 - (y / state.yMax) * (height / 2);
+                    
+                    if (!started) {
+                        ctx.moveTo(px, py);
+                        started = true;
+                    } else {
+                        ctx.lineTo(px, py);
+                    }
+                }
+                ctx.stroke();
+                ctx.setLineDash([]);
+            };
+            
+            // Draw selected orders
+            state.orders.forEach((n, idx) => {
+                if (state.type === 'J' || state.type === 'both') {
+                    drawFunction(besselJ, n, colors[n]);
+                }
+                if (state.type === 'Y' || state.type === 'both') {
+                    drawFunction(besselY, n, colors[n], [5, 5]);
+                }
+            });
+            
+            // Draw animated order
+            if (state.animOrder > 0) {
+                if (state.type === 'J' || state.type === 'both') {
+                    drawFunction(besselJ, state.animOrder, 'rgba(255,255,255,0.8)');
+                }
+                if (state.type === 'Y' || state.type === 'both') {
+                    drawFunction(besselY, state.animOrder, 'rgba(255,255,255,0.8)', [5, 5]);
+                }
+            }
+            
+            // Draw cursor line
+            if (mouseX !== null) {
+                ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+                ctx.lineWidth = 1;
+                ctx.setLineDash([3, 3]);
+                ctx.beginPath();
+                ctx.moveTo(mouseX, 0);
+                ctx.lineTo(mouseX, height);
+                ctx.stroke();
+                ctx.setLineDash([]);
+                
+                // Draw intersection points
+                const x = (mouseX / width) * state.xMax;
+                state.orders.forEach(n => {
+                    if (state.type === 'J' || state.type === 'both') {
+                        const y = besselJ(n, x);
+                        if (!isNaN(y) && Math.abs(y) <= state.yMax) {
+                            const py = height / 2 - (y / state.yMax) * (height / 2);
+                            ctx.fillStyle = colors[n];
+                            ctx.beginPath();
+                            ctx.arc(mouseX, py, 5, 0, Math.PI * 2);
+                            ctx.fill();
+                        }
+                    }
+                });
+            }
+            
+            // Draw marked points
+            state.markedPoints.forEach((pt, idx) => {
+                const px = (pt.x / state.xMax) * width;
+                const py = height / 2 - (pt.y / state.yMax) * (height / 2);
+                
+                ctx.fillStyle = 'rgba(255, 83, 112, 0.8)';
+                ctx.beginPath();
+                ctx.arc(px, py, 4, 0, Math.PI * 2);
+                ctx.fill();
+                
+                ctx.fillStyle = '#ff5370';
+                ctx.font = '10px monospace';
+                ctx.fillText(`(${pt.x.toFixed(2)}, ${pt.y.toFixed(2)})`, px + 8, py - 5);
+            });
+            
+            // Legend
+            ctx.font = '12px sans-serif';
+            let legendY = 20;
+            
+            if (state.type === 'J' || state.type === 'both') {
+                ctx.fillStyle = '#64ffda';
+                ctx.fillText('— Jₙ(x)', width - 100, legendY);
+                legendY += 18;
+            }
+            if (state.type === 'Y' || state.type === 'both') {
+                ctx.fillStyle = '#64ffda';
+                ctx.setLineDash([5, 5]);
+                ctx.beginPath();
+                ctx.moveTo(width - 100, legendY - 4);
+                ctx.lineTo(width - 80, legendY - 4);
+                ctx.stroke();
+                ctx.setLineDash([]);
+                ctx.fillText('Yₙ(x)', width - 75, legendY);
+            }
+        }
+
+        // Initial draw
+        draw();
+    </script>
+</body>
+</html>
