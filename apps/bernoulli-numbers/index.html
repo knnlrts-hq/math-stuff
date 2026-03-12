@@ -1,0 +1,1058 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bernoulli Number Explorer</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400&family=JetBrains+Mono:wght@400;500&family=EB+Garamond:ital,wght@0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0d0b0e;
+  --surface: #161318;
+  --surface2: #1e1a22;
+  --border: #2a2530;
+  --border-bright: #3d3648;
+  --text: #e8e2ef;
+  --text-dim: #9a8faa;
+  --text-faint: #6b5f7a;
+  --accent: #c49b5c;
+  --accent-dim: #8a6d3e;
+  --accent-glow: #c49b5c33;
+  --red: #c45c5c;
+  --green: #5cc49b;
+  --blue: #5c8ac4;
+  --purple: #9b5cc4;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'EB Garamond', serif;
+  font-size: 17px;
+  line-height: 1.7;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+::selection { background: var(--accent); color: var(--bg); }
+
+.grain {
+  position: fixed; inset: 0; pointer-events: none; z-index: 999;
+  opacity: 0.03;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+header {
+  text-align: center;
+  padding: 60px 20px 40px;
+  position: relative;
+}
+header::after {
+  content: '';
+  display: block;
+  width: 120px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--accent), transparent);
+  margin: 30px auto 0;
+}
+
+h1 {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: clamp(2.4rem, 5vw, 3.8rem);
+  font-weight: 400;
+  letter-spacing: 0.04em;
+  color: var(--text);
+  margin-bottom: 8px;
+}
+h1 em { color: var(--accent); font-style: italic; }
+
+.subtitle {
+  font-size: 1.05rem;
+  color: var(--text-dim);
+  font-style: italic;
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+nav {
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+  padding: 20px;
+  flex-wrap: wrap;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: linear-gradient(var(--bg) 60%, transparent);
+  padding-bottom: 30px;
+}
+
+nav button {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--text-dim);
+  font-family: 'EB Garamond', serif;
+  font-size: 0.95rem;
+  padding: 8px 18px;
+  cursor: pointer;
+  transition: all 0.3s;
+  border-radius: 2px;
+}
+nav button:hover { border-color: var(--accent-dim); color: var(--text); }
+nav button.active {
+  background: var(--accent);
+  color: var(--bg);
+  border-color: var(--accent);
+  font-weight: 500;
+}
+
+.container {
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 0 24px 80px;
+}
+
+section {
+  display: none;
+  animation: fadeIn 0.4s ease;
+}
+section.active { display: block; }
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+h2 {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 1.8rem;
+  font-weight: 400;
+  color: var(--accent);
+  margin-bottom: 8px;
+  letter-spacing: 0.02em;
+}
+
+.section-intro {
+  color: var(--text-dim);
+  margin-bottom: 28px;
+  max-width: 700px;
+  font-size: 1.02rem;
+}
+
+.insight-box {
+  background: var(--surface);
+  border-left: 2px solid var(--accent);
+  padding: 16px 20px;
+  margin: 20px 0;
+  font-size: 0.95rem;
+  color: var(--text-dim);
+  line-height: 1.65;
+}
+.insight-box strong { color: var(--accent); font-weight: 600; }
+
+.mono { font-family: 'JetBrains Mono', monospace; font-size: 0.88em; }
+
+/* === TABLE SECTION === */
+.controls-row {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
+.control-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.control-group label {
+  font-size: 0.9rem;
+  color: var(--text-dim);
+}
+
+select, input[type="number"] {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--text);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.85rem;
+  padding: 6px 10px;
+  border-radius: 2px;
+  outline: none;
+}
+select:focus, input[type="number"]:focus {
+  border-color: var(--accent);
+}
+input[type="number"] { width: 70px; }
+
+.bn-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 10px;
+}
+.bn-table th {
+  text-align: left;
+  font-family: 'Cormorant Garamond', serif;
+  font-weight: 600;
+  font-size: 0.95rem;
+  color: var(--accent);
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border-bright);
+}
+.bn-table td {
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--border);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.82rem;
+  color: var(--text-dim);
+  transition: background 0.2s;
+}
+.bn-table tr:hover td { background: var(--surface); color: var(--text); }
+.bn-table td.idx { color: var(--text-faint); width: 50px; }
+.bn-table td.frac { color: var(--text); }
+.bn-table td.zero { color: var(--text-faint); opacity: 0.5; }
+.bn-table td.pos { color: var(--green); }
+.bn-table td.neg { color: var(--red); }
+.bn-table td.special { color: var(--purple); }
+
+/* === FAULHABER === */
+.faulhaber-controls {
+  display: flex;
+  gap: 20px;
+  align-items: flex-end;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+}
+.input-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.input-group label {
+  font-size: 0.85rem;
+  color: var(--text-dim);
+}
+.input-group input {
+  width: 100px;
+}
+
+.result-display {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  padding: 24px;
+  margin: 16px 0;
+  text-align: center;
+  border-radius: 2px;
+}
+.result-display .formula {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 1.3rem;
+  color: var(--text);
+  margin-bottom: 12px;
+}
+.result-display .value {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 1.6rem;
+  color: var(--accent);
+}
+.result-display .breakdown {
+  font-size: 0.85rem;
+  color: var(--text-dim);
+  margin-top: 12px;
+  font-family: 'JetBrains Mono', monospace;
+  line-height: 1.8;
+}
+
+/* === TRIANGLE === */
+.triangle-controls {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.btn {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--text-dim);
+  font-family: 'EB Garamond', serif;
+  font-size: 0.9rem;
+  padding: 7px 16px;
+  cursor: pointer;
+  transition: all 0.25s;
+  border-radius: 2px;
+}
+.btn:hover { border-color: var(--accent-dim); color: var(--text); }
+.btn.primary {
+  background: var(--accent-dim);
+  border-color: var(--accent);
+  color: var(--bg);
+}
+.btn.primary:hover { background: var(--accent); }
+
+.triangle-grid {
+  overflow-x: auto;
+  padding: 10px 0;
+}
+
+.tri-table {
+  border-collapse: collapse;
+  min-width: fit-content;
+}
+.tri-table td {
+  padding: 6px 10px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.78rem;
+  text-align: right;
+  border: 1px solid var(--border);
+  color: var(--text-dim);
+  white-space: nowrap;
+  transition: all 0.3s;
+}
+.tri-table td.highlight {
+  background: var(--accent-glow);
+  color: var(--accent);
+  border-color: var(--accent-dim);
+}
+.tri-table td.result-cell {
+  background: var(--accent);
+  color: var(--bg);
+  font-weight: 500;
+}
+
+/* === CHART === */
+.chart-container {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  padding: 20px;
+  margin: 20px 0;
+  border-radius: 2px;
+}
+
+canvas {
+  width: 100% !important;
+  height: 400px !important;
+}
+
+/* === PROPERTIES === */
+.prop-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 16px;
+  margin: 20px 0;
+}
+.prop-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  padding: 20px;
+  transition: border-color 0.3s;
+}
+.prop-card:hover { border-color: var(--accent-dim); }
+.prop-card h3 {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 1.15rem;
+  color: var(--accent);
+  margin-bottom: 8px;
+  font-weight: 600;
+}
+.prop-card p {
+  font-size: 0.92rem;
+  color: var(--text-dim);
+  line-height: 1.6;
+}
+.prop-card .mono-block {
+  background: var(--bg);
+  padding: 10px;
+  margin-top: 10px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.8rem;
+  color: var(--text-faint);
+  border: 1px solid var(--border);
+  overflow-x: auto;
+}
+
+/* === ZETA === */
+.zeta-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 16px 0;
+}
+.zeta-table th {
+  text-align: left;
+  font-family: 'Cormorant Garamond', serif;
+  font-weight: 600;
+  color: var(--accent);
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--border-bright);
+  font-size: 0.95rem;
+}
+.zeta-table td {
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--border);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.82rem;
+  color: var(--text-dim);
+}
+.zeta-table tr:hover td { background: var(--surface); }
+
+.gen-func-display {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  padding: 30px;
+  text-align: center;
+  margin: 20px 0;
+  border-radius: 2px;
+}
+.gen-func-display .big-formula {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 1.5rem;
+  color: var(--text);
+  line-height: 1.9;
+}
+.gen-func-display .big-formula .accent { color: var(--accent); }
+
+.tab-sub {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 20px;
+}
+.tab-sub button {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text-dim);
+  font-family: 'EB Garamond', serif;
+  font-size: 0.88rem;
+  padding: 5px 14px;
+  cursor: pointer;
+  transition: all 0.25s;
+}
+.tab-sub button.active {
+  background: var(--surface2);
+  border-color: var(--accent-dim);
+  color: var(--accent);
+}
+
+.powers-bars {
+  display: flex;
+  align-items: flex-end;
+  gap: 3px;
+  height: 200px;
+  padding: 0 10px;
+  margin: 20px 0;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 2px;
+}
+.bar-item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  height: 100%;
+  padding-top: 10px;
+}
+.bar {
+  width: 100%;
+  max-width: 40px;
+  background: var(--accent);
+  transition: height 0.5s ease;
+  border-radius: 1px 1px 0 0;
+  min-height: 2px;
+}
+.bar-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.65rem;
+  color: var(--text-faint);
+  margin-top: 4px;
+  writing-mode: vertical-lr;
+  text-orientation: mixed;
+  max-height: 60px;
+  overflow: hidden;
+}
+
+@media (max-width: 600px) {
+  nav { gap: 4px; }
+  nav button { font-size: 0.82rem; padding: 6px 12px; }
+  .prop-grid { grid-template-columns: 1fr; }
+  .faulhaber-controls { flex-direction: column; align-items: stretch; }
+}
+</style>
+</head>
+<body>
+<div class="grain"></div>
+
+<header>
+  <h1>The <em>Bernoulli</em> Numbers</h1>
+  <p class="subtitle">An interactive exploration of one of the most ubiquitous sequences in mathematics — from sums of powers to the Riemann zeta function.</p>
+</header>
+
+<nav id="mainNav">
+  <button class="active" data-tab="table">Table</button>
+  <button data-tab="faulhaber">Sums of Powers</button>
+  <button data-tab="triangle">Akiyama–Tanigawa</button>
+  <button data-tab="growth">Growth</button>
+  <button data-tab="connections">Connections</button>
+  <button data-tab="properties">Properties</button>
+</nav>
+
+<div class="container">
+
+  <!-- TABLE -->
+  <section id="table" class="active">
+    <h2>The Sequence</h2>
+    <p class="section-intro">The Bernoulli numbers B<sub>n</sub> are rational numbers defined by the generating function t/(e<sup>t</sup> − 1). They vanish for all odd indices greater than 1, and alternate in sign for even indices — a pattern that encodes deep arithmetic information.</p>
+
+    <div class="controls-row">
+      <div class="control-group">
+        <label>Convention:</label>
+        <select id="conventionSelect">
+          <option value="minus">B⁻ (B₁ = −½, modern/NIST)</option>
+          <option value="plus">B⁺ (B₁ = +½, classical)</option>
+        </select>
+      </div>
+      <div class="control-group">
+        <label>Show up to n =</label>
+        <input type="number" id="tableMax" value="30" min="4" max="60" step="2">
+      </div>
+    </div>
+
+    <table class="bn-table" id="bnTable"></table>
+
+    <div class="insight-box">
+      <strong>Why two conventions?</strong> The generating function t/(e<sup>t</sup> − 1) gives B₁ = −½. But the older convention B₁ = +½ arises naturally from Bernoulli's original sum-of-powers formula and from the generating function t·e<sup>t</sup>/(e<sup>t</sup> − 1). The difference is just the sign of a single term — but it has been enough to cause confusion for centuries. Since 2022 Donald Knuth has advocated for the +½ convention.
+    </div>
+  </section>
+
+  <!-- FAULHABER -->
+  <section id="faulhaber">
+    <h2>Faulhaber's Formula</h2>
+    <p class="section-intro">The original motivation: compute the sum 1<sup>m</sup> + 2<sup>m</sup> + ··· + n<sup>m</sup> as a polynomial in n. Bernoulli numbers are the universal coefficients that make this work for any power m. Jacob Bernoulli's delight at discovering this — he could sum the 10th powers of the first 1000 integers in minutes — marks one of mathematics' great eureka moments.</p>
+
+    <div class="faulhaber-controls">
+      <div class="input-group">
+        <label>Power <span class="mono">m</span></label>
+        <input type="number" id="faulM" value="2" min="0" max="20">
+      </div>
+      <div class="input-group">
+        <label>Sum up to <span class="mono">n</span></label>
+        <input type="number" id="faulN" value="10" min="1" max="10000">
+      </div>
+    </div>
+
+    <div class="result-display" id="faulResult"></div>
+
+    <div class="powers-bars" id="powersBars"></div>
+
+    <div class="insight-box">
+      <strong>The hidden structure:</strong> The sum of m-th powers is always a polynomial in n of degree m + 1. For m = 1 you get the triangular numbers n(n+1)/2. For m = 2 the square pyramidal numbers n(n+1)(2n+1)/6. The Bernoulli numbers are what let you leapfrog from knowing these individual formulas to having a single master formula for all m at once.
+    </div>
+
+    <div class="insight-box">
+      <strong>Bernoulli's boast:</strong> After discovering his formula, Bernoulli wrote that it took him "less than half of a quarter of an hour" to find that the sum of 10th powers of the first 1000 integers equals 91,409,924,241,424,243,424,241,924,242,500. Try setting m = 10 and n = 1000 above to verify!
+    </div>
+  </section>
+
+  <!-- TRIANGLE -->
+  <section id="triangle">
+    <h2>Akiyama–Tanigawa Triangle</h2>
+    <p class="section-intro">A beautiful algorithm: start with the row 1, 1/2, 1/3, 1/4, … and apply a simple recurrence. The leftmost entry of each new row gives the next Bernoulli number. This "triangle" is to Bernoulli numbers what Pascal's triangle is to binomial coefficients — a computational engine hiding elegant structure.</p>
+
+    <div class="triangle-controls">
+      <label>Rows:</label>
+      <input type="number" id="triRows" value="7" min="2" max="12" style="width:60px">
+      <button class="btn primary" onclick="buildTriangle()">Build</button>
+    </div>
+
+    <div class="triangle-grid" id="triangleGrid"></div>
+
+    <div class="insight-box">
+      <strong>The recurrence:</strong> Set a<sub>0,m</sub> = 1/(m + 1). Then a<sub>n+1,m</sub> = (m + 1) · (a<sub>n,m</sub> − a<sub>n,m+1</sub>). The Bernoulli numbers appear as a<sub>n,0</sub> — the leftmost column. Each row "distills" information from the harmonic-like seed sequence into the Bernoulli numbers, via a process closely related to finite differences and Stirling numbers.
+    </div>
+  </section>
+
+  <!-- GROWTH -->
+  <section id="growth">
+    <h2>Growth &amp; Asymptotics</h2>
+    <p class="section-intro">Although the first few Bernoulli numbers are modest fractions, they grow at a breathtaking rate. The asymptotic formula |B<sub>2n</sub>| ~ 4√(πn) · (n/(πe))^(2n) shows that the even-indexed Bernoulli numbers eventually dwarf any fixed exponential. The denominators, by contrast, are always very well-behaved.</p>
+
+    <div class="tab-sub" id="growthTabs">
+      <button class="active" data-view="abs">|B<sub>2n</sub>| (log scale)</button>
+      <button data-view="denom">Denominators</button>
+      <button data-view="ratio">Ratio test</button>
+    </div>
+
+    <div class="chart-container">
+      <canvas id="growthChart"></canvas>
+    </div>
+    <div id="growthCaption" class="insight-box"></div>
+  </section>
+
+  <!-- CONNECTIONS -->
+  <section id="connections">
+    <h2>Connections</h2>
+    <p class="section-intro">Bernoulli numbers sit at a crossroads connecting number theory, analysis, topology, and combinatorics. Their most famous appearance beyond sums of powers is in the values of the Riemann zeta function at even positive integers and at negative integers.</p>
+
+    <h3 style="font-family:'Cormorant Garamond',serif; color:var(--accent); margin: 24px 0 8px;">Riemann Zeta at Even Integers</h3>
+    <p style="color:var(--text-dim); font-size:0.95rem; margin-bottom:16px;">
+      ζ(2n) = (−1)<sup>n+1</sup> · B<sub>2n</sub> · (2π)<sup>2n</sup> / (2 · (2n)!)
+    </p>
+    <table class="zeta-table" id="zetaTable"></table>
+
+    <div class="insight-box" style="margin-top:24px">
+      <strong>The Basel problem and beyond:</strong> Euler's famous result ζ(2) = π²/6 is just the n = 1 case of this formula: B₂ = 1/6, so ζ(2) = (2π)² · (1/6) / (2 · 2!) = π²/6. Every even zeta value is a rational multiple of a power of π, and the Bernoulli numbers supply exactly that rational factor. This is one reason the Bernoulli numbers encode arithmetic information about π itself.
+    </div>
+
+    <h3 style="font-family:'Cormorant Garamond',serif; color:var(--accent); margin: 30px 0 8px;">Generating Functions</h3>
+    <div class="gen-func-display">
+      <div class="big-formula">
+        <span class="accent">t</span> / (e<sup>t</sup> − 1) = Σ<sub>n≥0</sub> <span class="accent">B<sub>n</sub></span> · t<sup>n</sup> / n!
+      </div>
+      <p style="color:var(--text-faint); font-size:0.88rem; margin-top:14px;">This is the exponential generating function with the B⁻ convention (B₁ = −½).</p>
+      <p style="color:var(--text-faint); font-size:0.88rem; margin-top:6px;">With the B⁺ convention: t·e<sup>t</sup> / (e<sup>t</sup> − 1) = Σ B⁺<sub>n</sub> · t<sup>n</sup> / n!</p>
+    </div>
+
+    <div class="insight-box">
+      <strong>Why this generating function?</strong> The function t/(e<sup>t</sup> − 1) appears naturally when you try to express the Euler–Maclaurin formula — the bridge between sums and integrals — in closed form. It's also the moment-generating function of a certain distribution on [0,1], and its poles at t = 2πik encode the periodicity of the integers under the exponential map.
+    </div>
+
+    <h3 style="font-family:'Cormorant Garamond',serif; color:var(--accent); margin: 30px 0 8px;">Trigonometric Series</h3>
+    <div class="gen-func-display">
+      <div class="big-formula" style="font-size:1.2rem;">
+        t · cot(t) = Σ<sub>n≥0</sub> (−1)<sup>n</sup> · <span class="accent">B<sub>2n</sub></span> · (2t)<sup>2n</sup> / (2n)!
+      </div>
+      <p style="color:var(--text-faint); font-size:0.88rem; margin-top:14px;">The Laurent expansion of t·cot(t) around t = 0 gives only even-indexed Bernoulli numbers.</p>
+    </div>
+
+    <div class="insight-box">
+      <strong>Ada Lovelace's algorithm:</strong> In 1842, Ada Lovelace wrote what is often called the first computer program: an algorithm for Babbage's Analytical Engine that computed Bernoulli numbers. The Bernoulli numbers thus hold the distinction of being the subject of the first published complex algorithm — the dawn of computer science is woven into this sequence.
+    </div>
+  </section>
+
+  <!-- PROPERTIES -->
+  <section id="properties">
+    <h2>Patterns &amp; Properties</h2>
+    <p class="section-intro">The Bernoulli numbers conceal an astonishing density of structure. Here are some of the most important patterns and theorems.</p>
+
+    <div class="prop-grid">
+      <div class="prop-card">
+        <h3>Vanishing Odd Terms</h3>
+        <p>B<sub>n</sub> = 0 for all odd n > 1. This follows from the generating function: t/(e<sup>t</sup>−1) + t/2 is an even function of t, so all odd coefficients beyond B₁ vanish. This cuts the sequence in half — only even-indexed values carry information.</p>
+      </div>
+
+      <div class="prop-card">
+        <h3>Sign Pattern</h3>
+        <p>For even n > 0: B<sub>n</sub> is negative when n ≡ 0 (mod 4) and positive when n ≡ 2 (mod 4). Equivalently, (−1)<sup>n/2+1</sup>·B<sub>n</sub> > 0. This alternation is inherited from the alternating signs of ζ(2n) when unwound through the zeta relation.</p>
+        <div class="mono-block">
+B₂  = +1/6    (2 mod 4 = 2, +)
+B₄  = −1/30   (4 mod 4 = 0, −)
+B₆  = +1/42   (6 mod 4 = 2, +)
+B₈  = −1/30   (8 mod 4 = 0, −)
+B₁₀ = +5/66   (10 mod 4 = 2, +)</div>
+      </div>
+
+      <div class="prop-card">
+        <h3>Von Staudt–Clausen Theorem</h3>
+        <p>The denominator of B<sub>2n</sub> (in lowest terms) is exactly the product of all primes p such that (p−1) | 2n. This is why the denominators look so structured: denom(B₁₂) = 2·3·5·7·13 = 2730 because p−1 divides 12 for p ∈ {2,3,5,7,13}.</p>
+      </div>
+
+      <div class="prop-card">
+        <h3>Kummer's Congruences</h3>
+        <p>If p is prime and p−1 does not divide 2n, then B<sub>2n</sub>/(2n) is p-integral and its residue mod p depends only on 2n mod (p−1). This deep arithmetic regularity connects Bernoulli numbers to p-adic analysis and Iwasawa theory.</p>
+      </div>
+
+      <div class="prop-card">
+        <h3>Irregular Primes</h3>
+        <p>A prime p is <em>irregular</em> if it divides the numerator of some B<sub>2k</sub> for 2k ≤ p−3. The first irregular prime is 37 (divides the numerator of B₃₂). Regular primes satisfy Fermat's Last Theorem automatically — irregularity is where the difficulty hides.</p>
+      </div>
+
+      <div class="prop-card">
+        <h3>Exotic Spheres</h3>
+        <p>The number of exotic differentiable structures on the (4n−1)-sphere involves Bernoulli numbers through the Kervaire–Milnor formula. In dimension 7, there are 28 exotic spheres — and the Bernoulli number B₄ = −1/30 lurks in the computation. Pure number theory shapes the geometry of higher-dimensional spaces.</p>
+      </div>
+    </div>
+
+    <div class="insight-box">
+      <strong>A personal favorite:</strong> The number 691 — the numerator of B₁₂ = −691/2730 — is one of the most famous numbers in mathematics. It appears in Ramanujan's tau function, in the theory of modular forms, and as a "congruence prime" for the discriminant modular form Δ. The seemingly innocuous fraction −691/2730 is a gateway to some of the deepest structures in modern number theory.
+    </div>
+  </section>
+
+</div>
+
+<script>
+// ======== FRACTION ARITHMETIC ========
+function gcd(a, b) {
+  a = a < 0n ? -a : a;
+  b = b < 0n ? -b : b;
+  while (b) { [a, b] = [b, a % b]; }
+  return a;
+}
+
+class Frac {
+  constructor(n, d = 1n) {
+    if (typeof n === 'number') n = BigInt(Math.round(n));
+    if (typeof d === 'number') d = BigInt(Math.round(d));
+    if (d < 0n) { n = -n; d = -d; }
+    const g = gcd(n < 0n ? -n : n, d);
+    this.n = n / g;
+    this.d = d / g;
+  }
+  add(o) { return new Frac(this.n * o.d + o.n * this.d, this.d * o.d); }
+  sub(o) { return new Frac(this.n * o.d - o.n * this.d, this.d * o.d); }
+  mul(o) { return new Frac(this.n * o.n, this.d * o.d); }
+  div(o) { return new Frac(this.n * o.d, this.d * o.n); }
+  neg() { return new Frac(-this.n, this.d); }
+  isZero() { return this.n === 0n; }
+  toNum() { return Number(this.n) / Number(this.d); }
+  toString() {
+    if (this.d === 1n) return `${this.n}`;
+    return `${this.n}/${this.d}`;
+  }
+}
+
+const ZERO = new Frac(0n);
+const ONE = new Frac(1n);
+
+function binomial(n, k) {
+  if (k < 0 || k > n) return 0n;
+  if (k === 0 || k === n) return 1n;
+  let r = 1n;
+  for (let i = 0; i < k; i++) {
+    r = r * BigInt(n - i) / BigInt(i + 1);
+  }
+  return r;
+}
+
+// Compute B_0 .. B_max using recursive definition
+const bernoulliCache = {};
+function bernoulli(n, convention = 'minus') {
+  const key = `${n}_${convention}`;
+  if (bernoulliCache[key]) return bernoulliCache[key];
+
+  if (n === 0) { bernoulliCache[key] = ONE; return ONE; }
+  if (n === 1) {
+    const val = convention === 'minus' ? new Frac(-1n, 2n) : new Frac(1n, 2n);
+    bernoulliCache[key] = val;
+    return val;
+  }
+  if (n % 2 === 1 && n > 1) { bernoulliCache[key] = ZERO; return ZERO; }
+
+  // B_n = -1/(n+1) * sum_{k=0}^{n-1} C(n+1,k) * B_k
+  let sum = ZERO;
+  for (let k = 0; k < n; k++) {
+    const bk = bernoulli(k, convention);
+    if (!bk.isZero()) {
+      sum = sum.add(new Frac(binomial(n + 1, k)).mul(bk));
+    }
+  }
+  const result = sum.neg().div(new Frac(BigInt(n + 1)));
+  bernoulliCache[key] = result;
+  return result;
+}
+
+// ======== TAB NAVIGATION ========
+document.querySelectorAll('#mainNav button').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('#mainNav button').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('section').forEach(s => s.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById(btn.dataset.tab).classList.add('active');
+    if (btn.dataset.tab === 'growth') drawGrowthChart();
+    if (btn.dataset.tab === 'connections') buildZetaTable();
+  });
+});
+
+// ======== TABLE SECTION ========
+function buildTable() {
+  const conv = document.getElementById('conventionSelect').value;
+  const max = parseInt(document.getElementById('tableMax').value) || 30;
+  let html = `<thead><tr><th>n</th><th>B<sub>n</sub> (fraction)</th><th>Decimal</th></tr></thead><tbody>`;
+  for (let i = 0; i <= max; i++) {
+    const b = bernoulli(i, conv);
+    const dec = b.toNum();
+    let cls = '';
+    if (b.isZero() && i > 1) cls = 'zero';
+    else if (dec > 0) cls = 'pos';
+    else if (dec < 0) cls = 'neg';
+    if (i === 1) cls = 'special';
+    html += `<tr><td class="idx">${i}</td><td class="frac ${cls}">${b.toString()}</td><td class="${cls}">${b.isZero() && i > 0 ? '0' : dec.toPrecision(10)}</td></tr>`;
+  }
+  html += '</tbody>';
+  document.getElementById('bnTable').innerHTML = html;
+}
+
+document.getElementById('conventionSelect').addEventListener('change', buildTable);
+document.getElementById('tableMax').addEventListener('change', buildTable);
+buildTable();
+
+// ======== FAULHABER ========
+function computeFaulhaber() {
+  const m = parseInt(document.getElementById('faulM').value) || 0;
+  const n = parseInt(document.getElementById('faulN').value) || 1;
+
+  // Direct computation for verification (and for small n)
+  let directSum = 0n;
+  const mB = BigInt(m);
+  const nB = BigInt(n);
+  if (n <= 10000 && m <= 20) {
+    for (let i = 1n; i <= nB; i++) {
+      let pw = 1n;
+      for (let j = 0; j < m; j++) pw *= i;
+      directSum += pw;
+    }
+  }
+
+  // Faulhaber: S_m(n) = 1/(m+1) * sum_{k=0}^{m} C(m+1,k) * B_k * n^{m+1-k}
+  // Using B+ convention for the standard Faulhaber form
+  let formulaSum = ZERO;
+  let breakdown = [];
+  for (let k = 0; k <= m; k++) {
+    const bk = bernoulli(k, 'plus');
+    if (bk.isZero() && k > 0) continue;
+    const coeff = new Frac(binomial(m + 1, k));
+    // n^{m+1-k}
+    let nPow = 1n;
+    for (let j = 0; j < m + 1 - k; j++) nPow *= nB;
+    const term = coeff.mul(bk).mul(new Frac(nPow));
+    formulaSum = formulaSum.add(term);
+    if (!term.isZero()) {
+      breakdown.push(`C(${m+1},${k})·B${k}·${n}^${m+1-k} = ${term.toString()}`);
+    }
+  }
+  const result = formulaSum.div(new Frac(BigInt(m + 1)));
+
+  const el = document.getElementById('faulResult');
+  el.innerHTML = `
+    <div class="formula">1<sup>${m}</sup> + 2<sup>${m}</sup> + ··· + ${n}<sup>${m}</sup></div>
+    <div class="value">${n <= 10000 && m <= 20 ? directSum.toString() : result.toString()}</div>
+    ${m <= 6 ? `<div class="breakdown">${breakdown.slice(0, 8).join('<br>')}</div>` : ''}
+  `;
+
+  // Draw bars
+  const barsEl = document.getElementById('powersBars');
+  const maxBars = Math.min(n, 25);
+  let vals = [];
+  for (let i = 1; i <= maxBars; i++) {
+    vals.push(Math.pow(i, m));
+  }
+  const maxVal = Math.max(...vals, 1);
+  barsEl.innerHTML = vals.map((v, i) => `
+    <div class="bar-item">
+      <div class="bar" style="height:${Math.max(1, (v / maxVal) * 170)}px"></div>
+      <span class="bar-label">${i + 1}</span>
+    </div>
+  `).join('');
+}
+
+document.getElementById('faulM').addEventListener('input', computeFaulhaber);
+document.getElementById('faulN').addEventListener('input', computeFaulhaber);
+computeFaulhaber();
+
+// ======== TRIANGLE ========
+function buildTriangle() {
+  const rows = parseInt(document.getElementById('triRows').value) || 7;
+  const cols = rows + 2;
+
+  // Build Akiyama-Tanigawa table
+  let a = [];
+  // Row 0: a[0][m] = 1/(m+1)
+  a[0] = [];
+  for (let m = 0; m < cols; m++) {
+    a[0][m] = new Frac(1n, BigInt(m + 1));
+  }
+  // Subsequent rows
+  for (let n = 1; n < rows; n++) {
+    a[n] = [];
+    for (let m = 0; m < cols - n; m++) {
+      a[n][m] = new Frac(BigInt(m + 1)).mul(a[n-1][m].sub(a[n-1][m+1]));
+    }
+  }
+
+  let html = '<table class="tri-table"><tr><td style="color:var(--accent);border:none;"></td>';
+  const dispCols = Math.min(cols, rows + 1);
+  for (let m = 0; m < dispCols; m++) {
+    html += `<td style="color:var(--accent);border-color:var(--border-bright);font-size:0.72rem;">m=${m}</td>`;
+  }
+  html += '</tr>';
+
+  for (let n = 0; n < rows; n++) {
+    html += `<tr><td style="color:var(--accent);border-color:var(--border-bright);font-size:0.72rem;">n=${n}</td>`;
+    for (let m = 0; m < dispCols; m++) {
+      if (m < cols - n) {
+        const isResult = m === 0;
+        html += `<td class="${isResult ? 'result-cell' : ''}">${a[n][m].toString()}</td>`;
+      } else {
+        html += `<td style="border-color:transparent;"></td>`;
+      }
+    }
+    html += '</tr>';
+  }
+  html += '</table>';
+  document.getElementById('triangleGrid').innerHTML = html;
+}
+buildTriangle();
+
+// ======== GROWTH CHART ========
+function drawGrowthChart() {
+  const canvas = document.getElementById('growthChart');
+  const ctx = canvas.getContext('2d');
+  canvas.width = canvas.offsetWidth * 2;
+  canvas.height = 400 * 2;
+  ctx.scale(2, 2);
+  const W = canvas.offsetWidth;
+  const H = 400;
+
+  const activeView = document.querySelector('#growthTabs button.active')?.dataset.view || 'abs';
+
+  ctx.fillStyle = '#161318';
+  ctx.fillRect(0, 0, W, H);
+
+  const pad = { t: 30, r: 30, b: 50, l: 70 };
+  const pw = W - pad.l - pad.r;
+  const ph = H - pad.t - pad.b;
+
+  let data = [];
+  const maxN = 30;
+
+  if (activeView === 'abs') {
+    for (let i = 1; i <= maxN; i++) {
+      const b = bernoulli(2 * i, 'minus');
+      const v = Math.abs(b.toNum());
+      data.push({ x: i, y: v > 0 ? Math.log10(v) : -2, label: `B${2*i}` });
+    }
+  } else if (activeView === 'denom') {
+    for (let i = 1; i <= maxN; i++) {
+      const b = bernoulli(2 * i, 'minus');
+      const d = Number(b.d < 0n ? -b.d : b.d);
+      data.push({ x: i, y: d, label: `B${2*i}` });
+    }
+  } else { // ratio
+    let prev = 0;
+    for (let i = 1; i <= maxN; i++) {
+      const b = bernoulli(2 * i, 'minus');
+      const v = Math.abs(b.toNum());
+      const ratio = prev > 0 ? v / prev : 0;
+      prev = v;
+      data.push({ x: i, y: ratio, label: `|B${2*i}/B${2*(i-1)}|` });
+    }
+    data = data.slice(1); // skip first
+  }
+
+  const yVals = data.map(d => d.y);
+  let yMin = Math.min(...yVals);
+  let yMax = Math.max(...yVals);
+  if (yMin === yMax) { yMin -= 1; yMax += 1; }
+  const yPad = (yMax - yMin) * 0.1;
+  yMin -= yPad; yMax += yPad;
+
+  // Axes
+  ctx.strokeStyle = '#2a2530';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(pad.l, pad.t); ctx.lineTo(pad.l, H - pad.b);
+  ctx.lineTo(W - pad.r, H - pad.b);
+  ctx.stroke();
+
+  // Grid lines
+  ctx.strokeStyle = '#1e1a22';
+  const nGridY = 5;
+  ctx.font = '11px "JetBrains Mono", monospace';
+  ctx.fillStyle = '#6b5f7a';
+  ctx.textAlign = 'right';
+  for (let i = 0; i <= nGridY; i++) {
+    const y = pad.t + (ph * i / nGridY);
+    const val = yMax - (yMax - yMin) * i / nGridY;
+    ctx.beginPath(); ctx.moveTo(pad.l, y); ctx.lineTo(W - pad.r, y); ctx.stroke();
+    let label = activeView === 'abs' ? `10^${val.toFixed(0)}` : activeView === 'denom' ? val.toFixed(0) : val.toFixed(1);
+    ctx.fillText(label, pad.l - 8, y + 4);
+  }
+
+  // Data points & line
+  ctx.strokeStyle = '#c49b5c';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  data.forEach((d, i) => {
+    const x = pad.l + (d.x - data[0].x) / (data[data.length-1].x - data[0].x) * pw;
+    const y = pad.t + (1 - (d.y - yMin) / (yMax - yMin)) * ph;
+    if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+  });
+  ctx.stroke();
+
+  // Dots
+  data.forEach((d, i) => {
+    const x = pad.l + (d.x - data[0].x) / (data[data.length-1].x - data[0].x) * pw;
+    const y = pad.t + (1 - (d.y - yMin) / (yMax - yMin)) * ph;
+    ctx.fillStyle = '#c49b5c';
+    ctx.beginPath(); ctx.arc(x, y, 3, 0, Math.PI * 2); ctx.fill();
+
+    // X labels (sparse)
+    if (i % 3 === 0 || data.length < 15) {
+      ctx.fillStyle = '#6b5f7a';
+      ctx.textAlign = 'center';
+      ctx.font = '10px "JetBrains Mono", monospace';
+      ctx.fillText(d.label, x, H - pad.b + 16);
+    }
+  });
+
+  // Caption
+  const cap = document.getElementById('growthCaption');
+  if (activeView === 'abs') {
+    cap.innerHTML = `<strong>Superexponential growth:</strong> The absolute values |B<sub>2n</sub>| grow faster than any exponential. By B₃₀, we're already past 10⁸. The asymptotic formula |B<sub>2n</sub>| ~ 2·(2n)!/(2π)<sup>2n</sup> shows that factorial growth in the numerator always wins against the exponential denominator. This is intimately connected to the fact that the Taylor series for t/(e<sup>t</sup>−1) has radius of convergence only 2π.`;
+  } else if (activeView === 'denom') {
+    cap.innerHTML = `<strong>Structured denominators:</strong> By the Von Staudt–Clausen theorem, denom(B<sub>2n</sub>) = ∏{p prime : (p−1)|2n} p. The denominators are always squarefree products of specific primes. For example, denom(B<sub>12</sub>) = 2·3·5·7·13 = 2730 because each of {2,3,5,7,13} has the property that p−1 divides 12. This makes denominators predictable even as numerators grow wildly.`;
+  } else {
+    cap.innerHTML = `<strong>The ratio test:</strong> The ratio |B<sub>2n</sub>/B<sub>2(n−1)</sub>| grows roughly like (2n)(2n−1)/(2π)² ≈ n²/π². This confirms the sequence diverges — and shows the growth is roughly quadratic in the index, period by period. The convergence to this quadratic behavior is quite fast.`;
+  }
+}
+
+document.querySelectorAll('#growthTabs button').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('#growthTabs button').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    drawGrowthChart();
+  });
+});
+
+// ======== ZETA TABLE ========
+function buildZetaTable() {
+  let html = `<thead><tr><th>n</th><th>ζ(2n)</th><th>= (−1)<sup>n+1</sup> B<sub>2n</sub> (2π)<sup>2n</sup> / (2·(2n)!)</th><th>Decimal</th></tr></thead><tbody>`;
+  const famous = [
+    [1, 'π²/6'],
+    [2, 'π⁴/90'],
+    [3, 'π⁶/945'],
+    [4, 'π⁸/9450'],
+    [5, 'π¹⁰/93555'],
+  ];
+
+  for (let i = 0; i < famous.length; i++) {
+    const [n, expr] = famous[i];
+    const b = bernoulli(2 * n, 'minus');
+    const val = Math.abs(b.toNum()) * Math.pow(2 * Math.PI, 2 * n) / (2 * factorial(2 * n));
+    html += `<tr>
+      <td>${n}</td>
+      <td style="color:var(--accent)">${expr}</td>
+      <td>B<sub>${2*n}</sub> = ${b.toString()}</td>
+      <td>${val.toPrecision(12)}</td>
+    </tr>`;
+  }
+  html += '</tbody>';
+  document.getElementById('zetaTable').innerHTML = html;
+}
+
+function factorial(n) {
+  let r = 1;
+  for (let i = 2; i <= n; i++) r *= i;
+  return r;
+}
+
+// ======== INIT ========
+window.addEventListener('resize', () => {
+  if (document.getElementById('growth').classList.contains('active')) drawGrowthChart();
+});
+</script>
+</body>
+</html>

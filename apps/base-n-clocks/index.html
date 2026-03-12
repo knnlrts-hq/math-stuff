@@ -1,0 +1,626 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Clock Base Explorer</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&family=DM+Sans:wght@300;400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0c10;
+    --surface: #12151c;
+    --surface2: #1a1e28;
+    --border: #2a2f3d;
+    --text: #e2e4ea;
+    --text-dim: #7a8194;
+    --accent: #4fe0b5;
+    --accent2: #3bc4f0;
+    --accent3: #f0a03b;
+    --danger: #f05a5a;
+    --ring: rgba(79, 224, 181, 0.08);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  .grain {
+    position: fixed; inset: 0; z-index: 0; pointer-events: none; opacity: 0.03;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+
+  .container {
+    position: relative; z-index: 1;
+    max-width: 1200px; margin: 0 auto; padding: 24px 20px 40px;
+  }
+
+  header {
+    text-align: center; margin-bottom: 28px;
+  }
+  header h1 {
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 300; font-size: 1.6rem; letter-spacing: 0.12em;
+    color: var(--accent);
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+  header p {
+    color: var(--text-dim); font-size: 0.88rem; max-width: 540px; margin: 0 auto; line-height: 1.5;
+  }
+
+  .controls {
+    display: flex; align-items: center; justify-content: center;
+    gap: 16px; margin-bottom: 28px; flex-wrap: wrap;
+  }
+  .control-group {
+    display: flex; align-items: center; gap: 8px;
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 10px; padding: 8px 14px;
+  }
+  .control-group label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.72rem; text-transform: uppercase;
+    letter-spacing: 0.08em; color: var(--text-dim);
+  }
+  .base-slider {
+    -webkit-appearance: none; appearance: none;
+    width: 180px; height: 4px; border-radius: 2px;
+    background: var(--border); outline: none;
+  }
+  .base-slider::-webkit-slider-thumb {
+    -webkit-appearance: none; appearance: none;
+    width: 20px; height: 20px; border-radius: 50%;
+    background: var(--accent); cursor: pointer;
+    box-shadow: 0 0 12px rgba(79,224,181,0.4);
+  }
+  .base-val {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 1.3rem; font-weight: 700;
+    color: var(--accent); min-width: 32px; text-align: center;
+  }
+
+  .mode-toggle {
+    display: flex; gap: 0; border-radius: 8px; overflow: hidden;
+    border: 1px solid var(--border);
+  }
+  .mode-btn {
+    background: var(--surface); border: none; color: var(--text-dim);
+    font-family: 'JetBrains Mono', monospace; font-size: 0.7rem;
+    padding: 8px 14px; cursor: pointer; text-transform: uppercase;
+    letter-spacing: 0.06em; transition: all 0.2s;
+  }
+  .mode-btn.active {
+    background: var(--accent); color: var(--bg); font-weight: 600;
+  }
+
+  .clocks-row {
+    display: grid; grid-template-columns: 1fr 1fr;
+    gap: 24px; margin-bottom: 24px;
+  }
+
+  .clock-panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 24px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+  .clock-panel::before {
+    content: ''; position: absolute; top: 0; left: 0; right: 0;
+    height: 2px;
+  }
+  .clock-panel.standard::before { background: linear-gradient(90deg, transparent, var(--accent2), transparent); }
+  .clock-panel.custom::before { background: linear-gradient(90deg, transparent, var(--accent), transparent); }
+
+  .clock-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.68rem; text-transform: uppercase;
+    letter-spacing: 0.12em; margin-bottom: 14px;
+  }
+  .standard .clock-label { color: var(--accent2); }
+  .custom .clock-label { color: var(--accent); }
+
+  .clock-canvas-wrap {
+    position: relative;
+    width: 220px; height: 220px;
+    margin: 0 auto 14px;
+  }
+  .clock-canvas-wrap canvas {
+    width: 100%; height: 100%;
+  }
+
+  .digital-time {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 1.5rem; font-weight: 600;
+    letter-spacing: 0.04em; margin-bottom: 4px;
+  }
+  .standard .digital-time { color: var(--accent2); }
+  .custom .digital-time { color: var(--accent); }
+
+  .digital-sub {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.7rem; color: var(--text-dim);
+  }
+
+  .insight-grid {
+    display: grid; grid-template-columns: 1fr 1fr;
+    gap: 16px; margin-bottom: 20px;
+  }
+
+  .insight-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px 18px;
+    border-left: 3px solid var(--accent);
+    text-align: left;
+  }
+  .insight-card.wide { grid-column: 1 / -1; }
+  .insight-card h3 {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.68rem; text-transform: uppercase;
+    letter-spacing: 0.08em; color: var(--accent);
+    margin-bottom: 8px;
+  }
+  .insight-card p {
+    font-size: 0.84rem; line-height: 1.55; color: var(--text-dim);
+  }
+  .insight-card .val {
+    font-family: 'JetBrains Mono', monospace;
+    color: var(--text); font-weight: 500;
+  }
+  .insight-card.orange { border-left-color: var(--accent3); }
+  .insight-card.orange h3 { color: var(--accent3); }
+  .insight-card.blue { border-left-color: var(--accent2); }
+  .insight-card.blue h3 { color: var(--accent2); }
+
+  .mapping-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.76rem;
+    margin-top: 8px;
+  }
+  .mapping-table th {
+    color: var(--text-dim); font-weight: 400;
+    text-transform: uppercase; letter-spacing: 0.06em;
+    font-size: 0.65rem; padding: 4px 8px;
+    border-bottom: 1px solid var(--border);
+    text-align: left;
+  }
+  .mapping-table td {
+    padding: 5px 8px;
+    border-bottom: 1px solid rgba(42,47,61,0.5);
+    color: var(--text);
+  }
+  .mapping-table tr:hover td { background: rgba(79,224,181,0.04); }
+
+  .fraction-bar {
+    height: 8px; border-radius: 4px;
+    background: var(--surface2);
+    margin: 10px 0; position: relative; overflow: hidden;
+  }
+  .fraction-fill {
+    height: 100%; border-radius: 4px;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    transition: width 0.3s;
+  }
+  .fraction-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.72rem; color: var(--text-dim);
+    display: flex; justify-content: space-between;
+  }
+
+  @media (max-width: 760px) {
+    .clocks-row { grid-template-columns: 1fr; }
+    .insight-grid { grid-template-columns: 1fr; }
+    .insight-card.wide { grid-column: auto; }
+    .clock-canvas-wrap { width: 180px; height: 180px; }
+  }
+</style>
+</head>
+<body>
+<div class="grain"></div>
+<div class="container">
+  <header>
+    <h1>Base-N Clock Lab</h1>
+    <p>Time is just a fraction of the day. A clock chooses how to slice and label that fraction. Explore what happens when you change the base.</p>
+  </header>
+
+  <div class="controls">
+    <div class="control-group">
+      <label>Base</label>
+      <input type="range" class="base-slider" id="baseSlider" min="2" max="24" value="16">
+      <span class="base-val" id="baseVal">16</span>
+    </div>
+    <div class="control-group">
+      <label>Time</label>
+      <div class="mode-toggle">
+        <button class="mode-btn active" data-mode="live">Live</button>
+        <button class="mode-btn" data-mode="manual">Manual</button>
+      </div>
+      <input type="time" id="manualTime" value="09:30" step="1" style="display:none; background:var(--surface2); border:1px solid var(--border); color:var(--text); font-family:'JetBrains Mono',monospace; font-size:0.82rem; padding:4px 8px; border-radius:6px;">
+    </div>
+  </div>
+
+  <div class="clocks-row">
+    <div class="clock-panel standard">
+      <div class="clock-label">Standard · Base 12</div>
+      <div class="clock-canvas-wrap">
+        <canvas id="clock12" width="440" height="440"></canvas>
+      </div>
+      <div class="digital-time" id="dig12">12:00:00</div>
+      <div class="digital-sub">12 hours · 60 min · 60 sec</div>
+    </div>
+    <div class="clock-panel custom">
+      <div class="clock-label" id="customLabel">Custom · Base 16</div>
+      <div class="clock-canvas-wrap">
+        <canvas id="clockN" width="440" height="440"></canvas>
+      </div>
+      <div class="digital-time" id="digN">0:0:0</div>
+      <div class="digital-sub" id="customSub">16 hours · 16 min · 16 sec</div>
+    </div>
+  </div>
+
+  <div style="margin-bottom:20px;">
+    <div class="fraction-label">
+      <span>Half-day progress</span>
+      <span id="fracVal">0.000%</span>
+    </div>
+    <div class="fraction-bar">
+      <div class="fraction-fill" id="fracFill" style="width:0%"></div>
+    </div>
+    <div class="fraction-label">
+      <span id="fracStd">0/43200 std seconds</span>
+      <span id="fracCustom">0 / ? base-N ticks</span>
+    </div>
+  </div>
+
+  <div class="insight-grid" id="insights"></div>
+
+  <div class="insight-card wide" style="margin-bottom:16px;">
+    <h3>Hour Mapping Table</h3>
+    <p style="margin-bottom:8px;">Each row shows where a base-12 hour boundary falls on the base-N clock.</p>
+    <div style="max-height:220px; overflow-y:auto;">
+      <table class="mapping-table" id="mappingTable">
+        <thead><tr><th>Std Hour</th><th>Base-N Time</th><th>Fraction</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script>
+const HEX = '0123456789ABCDEF';
+const DIGITS = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+
+function digitStr(n, base) {
+  if (n < 0) return '-' + digitStr(-n, base);
+  if (base <= 36) return n.toString(base).toUpperCase();
+  return String(n);
+}
+
+function fracToBaseN(fraction, base, depth) {
+  const parts = [];
+  let rem = fraction;
+  for (let i = 0; i < depth; i++) {
+    rem *= base;
+    const d = Math.floor(rem);
+    parts.push(d);
+    rem -= d;
+  }
+  return parts;
+}
+
+function getTimeState() {
+  const mode = document.querySelector('.mode-btn.active').dataset.mode;
+  if (mode === 'live') {
+    const now = new Date();
+    return { h: now.getHours() % 12, m: now.getMinutes(), s: now.getSeconds(), ms: now.getMilliseconds() };
+  } else {
+    const val = document.getElementById('manualTime').value || '09:30:00';
+    const [h, m, s] = val.split(':').map(Number);
+    return { h: (h || 0) % 12, m: m || 0, s: s || 0, ms: 0 };
+  }
+}
+
+function getFraction(t) {
+  return (t.h * 3600 + t.m * 60 + t.s + t.ms / 1000) / 43200;
+}
+
+function drawClock(canvas, numHours, fraction, accentColor, isStandard) {
+  const ctx = canvas.getContext('2d');
+  const w = canvas.width, h = canvas.height;
+  const cx = w / 2, cy = h / 2;
+  const R = w * 0.42;
+  ctx.clearRect(0, 0, w, h);
+
+  // outer ring
+  ctx.beginPath();
+  ctx.arc(cx, cy, R + 12, 0, Math.PI * 2);
+  ctx.strokeStyle = 'rgba(255,255,255,0.04)';
+  ctx.lineWidth = 1;
+  ctx.stroke();
+
+  // tick marks
+  const totalTicks = numHours <= 12 ? numHours * 5 : numHours;
+  for (let i = 0; i < totalTicks; i++) {
+    const angle = (i / totalTicks) * Math.PI * 2 - Math.PI / 2;
+    const isMajor = numHours <= 12 ? (i % 5 === 0) : true;
+    const isMinorMajor = numHours > 12 && (i % (numHours <= 24 ? 1 : 2) === 0);
+    const len = isMajor ? 14 : 6;
+    const lw = isMajor ? 2 : 1;
+    const r1 = R - len;
+    const r2 = R;
+    ctx.beginPath();
+    ctx.moveTo(cx + r1 * Math.cos(angle), cy + r1 * Math.sin(angle));
+    ctx.lineTo(cx + r2 * Math.cos(angle), cy + r2 * Math.sin(angle));
+    ctx.strokeStyle = isMajor ? accentColor : 'rgba(255,255,255,0.15)';
+    ctx.lineWidth = lw;
+    ctx.stroke();
+  }
+
+  // numerals
+  const labelCount = numHours;
+  ctx.font = `${numHours > 16 ? 11 : 13}px 'JetBrains Mono', monospace`;
+  ctx.fillStyle = 'rgba(255,255,255,0.6)';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  for (let i = 0; i < labelCount; i++) {
+    const angle = (i / labelCount) * Math.PI * 2 - Math.PI / 2;
+    const lr = R - (numHours > 16 ? 24 : 28);
+    const label = isStandard ? (i === 0 ? '12' : String(i)) : digitStr(i, numHours);
+    ctx.fillText(label, cx + lr * Math.cos(angle), cy + lr * Math.sin(angle));
+  }
+
+  // compute hands
+  let hourAngle, minAngle, secAngle;
+  if (isStandard) {
+    const t = getTimeState();
+    hourAngle = ((t.h + t.m / 60 + t.s / 3600) / 12) * Math.PI * 2 - Math.PI / 2;
+    minAngle = ((t.m + t.s / 60) / 60) * Math.PI * 2 - Math.PI / 2;
+    secAngle = ((t.s + t.ms / 1000) / 60) * Math.PI * 2 - Math.PI / 2;
+  } else {
+    const parts = fracToBaseN(fraction, numHours, 3);
+    const subFrac = fraction * numHours;
+    const hourVal = parts[0] + (subFrac - parts[0]);
+    hourAngle = (hourVal / numHours) * Math.PI * 2 - Math.PI / 2;
+
+    const minFrac = (subFrac - parts[0]) * numHours;
+    const minVal = parts[1] + (minFrac - parts[1]);
+    minAngle = (minVal / numHours) * Math.PI * 2 - Math.PI / 2;
+
+    const secFrac = (minFrac - parts[1]) * numHours;
+    secAngle = (secFrac / numHours) * Math.PI * 2 - Math.PI / 2;
+  }
+
+  // draw hands
+  function drawHand(angle, length, width, color) {
+    ctx.beginPath();
+    ctx.moveTo(cx, cy);
+    ctx.lineTo(cx + length * Math.cos(angle), cy + length * Math.sin(angle));
+    ctx.strokeStyle = color;
+    ctx.lineWidth = width;
+    ctx.lineCap = 'round';
+    ctx.stroke();
+  }
+  drawHand(hourAngle, R * 0.5, 4, accentColor);
+  drawHand(minAngle, R * 0.72, 2.5, 'rgba(255,255,255,0.7)');
+  drawHand(secAngle, R * 0.82, 1, 'rgba(255,255,255,0.3)');
+
+  // center dot
+  ctx.beginPath();
+  ctx.arc(cx, cy, 4, 0, Math.PI * 2);
+  ctx.fillStyle = accentColor;
+  ctx.fill();
+}
+
+function padBase(n, base) {
+  const s = digitStr(n, base);
+  return base > 10 && s.length < 2 ? '0' + s : s;
+}
+
+function formatBaseTime(fraction, base) {
+  const parts = fracToBaseN(fraction, base, 3);
+  return parts.map(d => padBase(d, base)).join(':');
+}
+
+function gcd(a, b) { return b === 0 ? a : gcd(b, a % b); }
+
+function generateInsights(base, fraction) {
+  const container = document.getElementById('insights');
+  const t = getTimeState();
+  const parts = fracToBaseN(fraction, base, 3);
+
+  const stdSec = 43200;
+  const baseTotalTicks = base * base * base;
+  const baseTickDuration = stdSec / baseTotalTicks;
+
+  const stdMinInSec = 60;
+  const baseMinInSec = stdSec / (base * base);
+
+  const hourRatio = 12 / base;
+
+  const g = gcd(12, base);
+  const alignedPoints = g;
+
+  let html = '';
+
+  // Card 1: Tick speed
+  html += `<div class="insight-card">
+    <h3>Tick Resolution</h3>
+    <p>A base-<span class="val">${base}</span> clock has <span class="val">${base}³ = ${baseTotalTicks.toLocaleString()}</span> ticks per half-day vs the standard <span class="val">43,200</span>.
+    Each base-${base} "second" lasts <span class="val">${baseTickDuration.toFixed(3)}s</span> real time — ${baseTickDuration < 1 ? 'faster than' : baseTickDuration > 1 ? 'slower than' : 'exactly'} a standard second.</p>
+  </div>`;
+
+  // Card 2: Hour duration
+  const baseHourMin = (720 / base);
+  html += `<div class="insight-card orange">
+    <h3>Hour Duration</h3>
+    <p>Each base-${base} hour = <span class="val">${baseHourMin.toFixed(2)}</span> standard minutes.
+    ${base < 12 ? `Fewer slices means each hour is a big chunk — you experience fewer "hour boundaries" in your day.` :
+      base > 12 ? `More slices means finer hourly granularity — scheduling becomes more precise at the hour level.` :
+      `Identical to a standard clock!`}</p>
+  </div>`;
+
+  // Card 3: alignment
+  html += `<div class="insight-card blue">
+    <h3>Alignment with Base 12</h3>
+    <p>gcd(12, ${base}) = <span class="val">${g}</span>, so the two clocks' hour hands align at <span class="val">${alignedPoints}</span> point${alignedPoints > 1 ? 's' : ''} per half-day.
+    ${g === 1 ? `These clocks are "coprime" — their hour marks almost never line up! Only at 0 (noon/midnight).` :
+      g === 12 ? `Every standard hour mark has a corresponding base-${base} mark — maximum compatibility.` :
+      `Partial overlap: every ${12/g} standard hours, the marks coincide.`}</p>
+  </div>`;
+
+  // Card 4: current time decomposition
+  html += `<div class="insight-card">
+    <h3>Current Time Decomposition</h3>
+    <p>The fraction <span class="val">${fraction.toFixed(6)}</span> of the half-day expressed in base ${base}:<br>
+    <span class="val" style="font-size:1.1rem;">${formatBaseTime(fraction, base)}</span><br>
+    This means ${parts[0]} × 1/${base} + ${parts[1]} × 1/${base}² + ${parts[2]} × 1/${base}³ of the cycle.
+    ${base === 2 ? ' In binary, each digit is just an on/off split — left or right half of each subdivision.' : ''}
+    ${base === 16 ? ' Hex time is popular in computing subcultures — each digit packs 4 bits of temporal info.' : ''}
+    ${base === 10 ? ' Decimal time was actually proposed during the French Revolution!' : ''}
+    ${base === 6 ? ' Base 6 is interesting because 60 = 6×10 — you can see echoes of our minute/second system.' : ''}
+    ${base === 24 ? ' A 24-unit clock face would pack a full day cycle into one dial — no AM/PM ambiguity.' : ''}
+    </p>
+  </div>`;
+
+  // Card 5: non-obvious insight based on base
+  let special = '';
+  if (base === 2) {
+    special = `<div class="insight-card wide orange">
+      <h3>Binary Insight</h3>
+      <p>Each "digit" on a binary clock is a <em>bisection</em>. The hour hand tells you: first or second half? The minute hand: first or second quarter? The second hand: which eighth? You're essentially performing a binary search through time. This is also why binary clocks in electronics use 6 independent bits — they can represent 0–63, enough for minutes and seconds (0–59).</p>
+    </div>`;
+  } else if (base === 8) {
+    special = `<div class="insight-card wide orange">
+      <h3>Octal Insight</h3>
+      <p>Octal (base 8) was historically used in computing as a shorthand for binary (3 bits per digit). An octal clock has 512 ticks per half-day — much coarser than our 43,200. Each octal "second" is a leisurely 84.4 real seconds. If you only needed minute-level precision in daily life, octal might feel surprisingly workable — 64 "minutes" per half-day.</p>
+    </div>`;
+  } else if (base === 16) {
+    special = `<div class="insight-card wide orange">
+      <h3>Hexadecimal Insight</h3>
+      <p>Hex time gives 4,096 ticks per half-day — about 10× coarser than standard. But hex has a lovely property: the time "8:0:0" is exactly the midpoint (50%) of the half-day, mapping to 6:00 standard. The digits 0–F give you 16 hours, making each hex hour just 45 real minutes. Programmers sometimes use ".beat" (Swatch Internet Time) which is decimal — but hex time would be more on-brand.</p>
+    </div>`;
+  } else if (base === 10) {
+    special = `<div class="insight-card wide orange">
+      <h3>Decimal Time: A Real Historical Experiment</h3>
+      <p>The French Republic actually adopted decimal time in 1793: 10 hours/day, 100 minutes/hour, 100 seconds/minute. It lasted about 2 years before being abandoned. The decimal second was 0.864 standard seconds — close enough to feel natural! The real problem wasn't math — it was that every clock, schedule, and habit in society needed replacing simultaneously.</p>
+    </div>`;
+  } else if (base === 60) {
+    special = `<div class="insight-card wide orange">
+      <h3>Sexagesimal: The Hidden Base of Our Clocks</h3>
+      <p>Our minutes and seconds are already base-60 subdivisions! The Babylonians used sexagesimal (base 60) for astronomy and timekeeping. A base-60 clock face would have 60 hour marks — exactly like our current minute marks. In a sense, the second hand on a normal clock IS a base-60 clock for subdividing the minute.</p>
+    </div>`;
+  } else if (base === 3) {
+    special = `<div class="insight-card wide orange">
+      <h3>Ternary Insight</h3>
+      <p>Base 3 (ternary) is theoretically the most efficient integer base (closest to <em>e</em> ≈ 2.718). A ternary clock with 3 hours and 3 "minutes" per hour gives only 27 ticks per half-day — each ~26.7 real minutes. You'd experience time in very broad strokes: "first third of the morning, middle portion." Some researchers argue ternary computing would be more efficient than binary — and ternary time has a certain elegant minimalism.</p>
+    </div>`;
+  } else {
+    const isPrime = (n) => { for (let i=2; i*i<=n; i++) if(n%i===0) return false; return n>1; };
+    if (isPrime(base)) {
+      special = `<div class="insight-card wide orange">
+        <h3>Prime Base Insight</h3>
+        <p>Base ${base} is prime — meaning the hour marks on this clock can never evenly subdivide into groups. You can't split a base-${base} clock face into halves, thirds, or quarters with hour marks landing exactly on the boundaries. This makes analog reading harder (no visual "quarter past" reference) but means the system has no redundant structure — every digit position is maximally independent.</p>
+      </div>`;
+    } else {
+      const factors = [];
+      let n = base;
+      for (let d = 2; d * d <= n; d++) { while (n % d === 0) { factors.push(d); n /= d; } }
+      if (n > 1) factors.push(n);
+      special = `<div class="insight-card wide orange">
+        <h3>Structure Insight</h3>
+        <p>Base ${base} factors as ${factors.join(' × ')}. This means you can naturally group hour marks into ${factors[0]} groups of ${base/factors[0]} — creating visual "sectors" on the clock face. Highly composite bases (with many factors, like 12 or 24) make the best clock bases because they offer many clean fractional divisions: halves, thirds, quarters. Base ${base} offers ${[...new Set(factors)].length} distinct factor groupings.</p>
+      </div>`;
+    }
+  }
+  html += special;
+
+  container.innerHTML = html;
+}
+
+function updateMappingTable(base) {
+  const tbody = document.querySelector('#mappingTable tbody');
+  let rows = '';
+  for (let h = 0; h <= 12; h++) {
+    const frac = h / 12;
+    const baseTime = formatBaseTime(frac, base);
+    rows += `<tr><td>${h === 0 ? '12:00' : h + ':00'}${h < 12 ? '' : ' (noon)'}</td><td>${baseTime}</td><td>${(frac * 100).toFixed(1)}%</td></tr>`;
+  }
+  tbody.innerHTML = rows;
+}
+
+// Mode toggle
+document.querySelectorAll('.mode-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('manualTime').style.display = btn.dataset.mode === 'manual' ? 'inline-block' : 'none';
+  });
+});
+
+// Main loop
+const baseSlider = document.getElementById('baseSlider');
+const baseValEl = document.getElementById('baseVal');
+let currentBase = 16;
+let lastInsightBase = -1;
+let lastInsightSec = -1;
+
+baseSlider.addEventListener('input', () => {
+  currentBase = parseInt(baseSlider.value);
+  baseValEl.textContent = currentBase;
+  document.getElementById('customLabel').textContent = `Custom · Base ${currentBase}`;
+  document.getElementById('customSub').textContent = `${currentBase} hours · ${currentBase} min · ${currentBase} sec`;
+  updateMappingTable(currentBase);
+  lastInsightBase = -1;
+});
+
+function tick() {
+  const t = getTimeState();
+  const frac = getFraction(t);
+
+  drawClock(document.getElementById('clock12'), 12, frac, '#3bc4f0', true);
+  drawClock(document.getElementById('clockN'), currentBase, frac, '#4fe0b5', false);
+
+  // Standard digital
+  const pad2 = n => String(n).padStart(2, '0');
+  document.getElementById('dig12').textContent = `${pad2(t.h === 0 ? 12 : t.h)}:${pad2(t.m)}:${pad2(t.s)}`;
+
+  // Base-N digital
+  document.getElementById('digN').textContent = formatBaseTime(frac, currentBase);
+
+  // Fraction bar
+  const pct = frac * 100;
+  document.getElementById('fracFill').style.width = pct + '%';
+  document.getElementById('fracVal').textContent = pct.toFixed(3) + '%';
+  const stdSecs = Math.floor(frac * 43200);
+  const baseTicks = Math.floor(frac * currentBase * currentBase * currentBase);
+  document.getElementById('fracStd').textContent = `${stdSecs.toLocaleString()} / 43,200 std seconds`;
+  document.getElementById('fracCustom').textContent = `${baseTicks.toLocaleString()} / ${(currentBase**3).toLocaleString()} base-${currentBase} ticks`;
+
+  // Update insights less frequently
+  const sec = Math.floor(frac * 720);
+  if (currentBase !== lastInsightBase || Math.abs(sec - lastInsightSec) > 2) {
+    generateInsights(currentBase, frac);
+    lastInsightBase = currentBase;
+    lastInsightSec = sec;
+  }
+
+  requestAnimationFrame(tick);
+}
+
+updateMappingTable(currentBase);
+tick();
+</script>
+</body>
+</html>
