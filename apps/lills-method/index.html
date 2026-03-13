@@ -1,0 +1,938 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lill's Method Explorer</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,500;0,700;1,300&family=JetBrains+Mono:wght@400;600&family=DM+Sans:wght@400;500;600&display=swap');
+
+*{margin:0;padding:0;box-sizing:border-box}
+
+:root{
+  --bg:#0c0f14;--sf:#151921;--sf2:#1c2230;--bd:#2a3040;
+  --tx:#d8dce6;--txd:#7a839a;--acc:#4fc3a0;--acc2:#e8a44a;
+  --las:#ff4466;--tp:#4a8aff;--pur:#a78bfa;--thov:#1f2737;
+}
+
+body{background:var(--bg);color:var(--tx);font-family:'DM Sans',sans-serif;min-height:100vh}
+
+.hdr{padding:24px 36px 0;max-width:1440px;margin:0 auto}
+.hdr h1{font-family:'Crimson Pro',serif;font-weight:300;font-size:2.4em;color:#fff;letter-spacing:-.02em}
+.hdr h1 span{color:var(--acc)}
+.hdr p{font-size:.92em;color:var(--txd);margin-top:5px;max-width:720px;line-height:1.6}
+
+.tabs{display:flex;gap:2px;padding:18px 36px 0;max-width:1440px;margin:0 auto;flex-wrap:wrap}
+.tab{padding:9px 18px;background:0 0;border:1px solid transparent;border-bottom:none;
+  color:var(--txd);font-family:'DM Sans',sans-serif;font-size:.82em;font-weight:500;
+  cursor:pointer;border-radius:8px 8px 0 0;transition:.2s}
+.tab:hover{background:var(--thov);color:var(--tx)}
+.tab.on{background:var(--sf);color:var(--acc);border-color:var(--bd)}
+
+.wrap{max-width:1440px;margin:0 auto;padding:0 36px 36px}
+.pnl{display:none;background:var(--sf);border:1px solid var(--bd);border-radius:0 12px 12px 12px;padding:24px;animation:fi .25s}
+.pnl.on{display:block}
+@keyframes fi{from{opacity:0;transform:translateY(4px)}to{opacity:1}}
+
+.row{display:flex;gap:22px;flex-wrap:wrap}
+.col-c{flex:1;min-width:380px}
+.col-r{width:330px;min-width:280px}
+
+canvas{width:100%;border-radius:8px;background:var(--bg);border:1px solid var(--bd);cursor:crosshair}
+
+label{display:block;font-size:.78em;color:var(--txd);margin-bottom:3px;font-weight:500;text-transform:uppercase;letter-spacing:.05em}
+input[type=text],input[type=number],select{width:100%;padding:8px 11px;background:var(--bg);border:1px solid var(--bd);
+  border-radius:6px;color:var(--tx);font-family:'JetBrains Mono',monospace;font-size:.88em;outline:0;transition:.2s}
+input:focus,select:focus{border-color:var(--acc)}
+input[type=range]{width:100%;accent-color:var(--acc);margin:3px 0}
+
+.cg{margin-bottom:14px}
+
+.ib{background:var(--bg);border:1px solid var(--bd);border-radius:8px;padding:13px 15px;margin-top:10px;font-size:.84em;line-height:1.6}
+.ib h4{font-family:'Crimson Pro',serif;font-weight:500;font-size:1.05em;margin-bottom:5px;color:#fff}
+.math{font-family:'JetBrains Mono',monospace;color:var(--acc);font-size:.93em}
+.val{font-family:'JetBrains Mono',monospace;color:var(--acc2)}
+
+.ins{border-left:3px solid var(--acc);padding:9px 13px;background:#4fc3a008;border-radius:0 6px 6px 0;
+  margin-top:10px;font-size:.82em;line-height:1.6;color:var(--txd)}
+.ins strong{color:var(--acc);font-weight:500}
+.ins.warn{border-left-color:var(--acc2)}
+.ins.warn strong{color:var(--acc2)}
+
+.btn{padding:7px 16px;background:var(--acc);color:var(--bg);border:none;border-radius:6px;
+  font-family:'DM Sans',sans-serif;font-weight:600;font-size:.82em;cursor:pointer;transition:.15s}
+.btn:hover{filter:brightness(1.15);transform:translateY(-1px)}
+.btn-s{background:var(--sf2);color:var(--tx);border:1px solid var(--bd)}
+.btn-s:hover{background:var(--bd)}
+
+.rb{display:inline-block;padding:2px 9px;border-radius:12px;font-family:'JetBrains Mono',monospace;font-size:.8em;margin:2px 3px 2px 0;color:#fff}
+
+.leg{display:flex;gap:14px;margin-top:8px;flex-wrap:wrap}
+.leg-i{display:flex;align-items:center;gap:5px;font-size:.76em;color:var(--txd)}
+.leg-d{width:10px;height:10px;border-radius:50%}
+
+.pd{font-family:'JetBrains Mono',monospace;font-size:.9em;color:var(--acc);padding:6px 0;min-height:1.4em}
+
+.htbl{width:100%;border-collapse:collapse;font-family:'JetBrains Mono',monospace;font-size:.83em;margin-top:8px}
+.htbl td,.htbl th{padding:5px 9px;border:1px solid var(--bd);text-align:center}
+.htbl th{background:var(--sf2);color:var(--txd);font-weight:500;font-size:.83em}
+
+.flex-btns{display:flex;gap:5px;flex-wrap:wrap}
+
+@media(max-width:900px){
+  .row{flex-direction:column}.col-r{width:100%}
+  .tabs,.wrap{padding-left:14px;padding-right:14px}
+  .hdr{padding:18px 14px 0}.hdr h1{font-size:1.7em}
+}
+</style>
+</head>
+<body>
+<div class="hdr">
+  <h1>Lill's <span>Method</span> Explorer</h1>
+  <p>Solve polynomial equations by shooting lasers at turtles. An interactive guide to Eduard Lill's beautiful graphical method from 1867.</p>
+</div>
+
+<div class="tabs" id="tabBar"></div>
+<div class="wrap" id="panels"></div>
+
+<script>
+// ===== CONFIG =====
+const TABS = [
+  'Lill\'s Method',
+  'Quadratic · Thales',
+  'Transformations · Origami',
+  'Iterative Deflation',
+  'Why It Works',
+  'Pascal\'s Triangle'
+];
+
+// ===== MATH UTILS =====
+function parseC(s){return s.split(',').map(v=>parseFloat(v.trim())).filter(v=>!isNaN(v))}
+function evalP(c,x){let r=0;for(let i=0;i<c.length;i++)r=r*x+c[i];return r}
+function horner(c,x){const s=[c[0]];for(let i=1;i<c.length;i++)s.push(s[s.length-1]*x+c[i]);return s}
+function deflate(c,root){const q=[c[0]];for(let i=1;i<c.length-1;i++)q.push(q[i-1]*root+c[i]);return q}
+
+const SUP='⁰¹²³⁴⁵⁶⁷⁸⁹';
+function supN(n){return n<2?(n===1?'x':''):('x'+String(n).split('').map(d=>SUP[+d]).join(''))}
+function polyStr(c){
+  if(!c.length)return'0';const d=c.length-1;let p=[];
+  for(let i=0;i<c.length;i++){const v=c[i],pw=d-i;if(v===0)continue;
+    let s='';if(i===0){s=(v===-1&&pw>0)?'−':(v===1&&pw>0)?'':String(v)}
+    else{const a=Math.abs(v);s=(v<0?' − ':' + ');if(a!==1||pw===0)s+=a}
+    s+=supN(pw);p.push(s)}
+  return p.join('')||'0'
+}
+
+function findRoots(c,lo=-10,hi=10,step=0.002){
+  const R=[];let pv=evalP(c,lo);
+  for(let x=lo+step;x<=hi;x+=step){const v=evalP(c,x);
+    if(pv*v<=0){let a=x-step,b=x;for(let i=0;i<60;i++){const m=(a+b)/2,vm=evalP(c,m);
+      if(Math.abs(vm)<1e-13){a=b=m;break}if(vm*evalP(c,a)<0)b=m;else a=m}
+      const r=(a+b)/2;if(!R.some(rr=>Math.abs(rr-r)<.005))R.push(r)}pv=v}
+  return R
+}
+
+// ===== TURTLE PATH =====
+const DIR=[[1,0],[0,-1],[-1,0],[0,1]];
+function turtlePath(c){const p=[{x:0,y:0}];
+  for(let i=0;i<c.length;i++){const d=DIR[i%4],pr=p[p.length-1];
+    p.push({x:pr.x+d[0]*c[i],y:pr.y+d[1]*c[i]})}return p}
+
+// ===== LASER =====
+function laserPath(c,slope){
+  const tp=turtlePath(c),n=c.length,lp=[{...tp[0]}];
+  let dx=1,dy=-slope;
+  for(let i=0;i<n-1;i++){
+    const sd=DIR[(i+1)%4],sp=tp[i+1],prev=lp[lp.length-1];
+    let hx,hy;
+    if(sd[0]!==0){if(Math.abs(dy)<1e-15)return{lp,hit:false,val:Infinity};
+      const t=(sp.y-prev.y)/dy;hx=prev.x+t*dx;hy=sp.y}
+    else{if(Math.abs(dx)<1e-15)return{lp,hit:false,val:Infinity};
+      const t=(sp.x-prev.x)/dx;hx=prev.x+t*dx;hy=prev.y+t*dy}
+    lp.push({x:hx,y:hy});
+    const nd=dy,ndy=-dx;dx=nd;dy=ndy}
+  const last=lp[lp.length-1],end=tp[tp.length-1];
+  const dist=Math.hypot(last.x-end.x,last.y-end.y);
+  return{lp,hit:dist<.05,val:evalP(c,-slope),dist}
+}
+
+// ===== CANVAS DRAWING =====
+function setup(cv){
+  const dpr=devicePixelRatio||1,r=cv.getBoundingClientRect();
+  cv.width=r.width*dpr;cv.height=r.height*dpr;
+  const ctx=cv.getContext('2d');ctx.scale(dpr,dpr);
+  return{ctx,w:r.width,h:r.height}
+}
+function w2c(pt,o){return{x:o.ox+pt.x*o.s,y:o.oy+pt.y*o.s}}
+function autoS(pts,w,h,pad=80){
+  if(!pts.length)return{ox:w/2,oy:h/2,s:40};
+  let x0=Infinity,x1=-Infinity,y0=Infinity,y1=-Infinity;
+  for(const p of pts){x0=Math.min(x0,p.x);x1=Math.max(x1,p.x);y0=Math.min(y0,p.y);y1=Math.max(y1,p.y)}
+  const rx=x1-x0||1,ry=y1-y0||1,s=Math.min((w-pad*2)/rx,(h-pad*2)/ry,80);
+  return{ox:w/2-(x0+x1)/2*s,oy:h/2-(y0+y1)/2*s,s}
+}
+function drawGrid(ctx,w,h,o){
+  ctx.strokeStyle='#1a2030';ctx.lineWidth=1;
+  for(let x=o.ox%o.s;x<w;x+=o.s){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,h);ctx.stroke()}
+  for(let y=o.oy%o.s;y<h;y+=o.s){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(w,y);ctx.stroke()}
+  ctx.strokeStyle='#2a3550';ctx.lineWidth=1.5;
+  ctx.beginPath();ctx.moveTo(0,o.oy);ctx.lineTo(w,o.oy);ctx.stroke();
+  ctx.beginPath();ctx.moveTo(o.ox,0);ctx.lineTo(o.ox,h);ctx.stroke()
+}
+function drawLines(ctx,pts,o){
+  ctx.strokeStyle='#ffffff08';ctx.lineWidth=1;ctx.setLineDash([4,4]);
+  for(let i=0;i<pts.length-1;i++){const a=w2c(pts[i],o),b=w2c(pts[i+1],o);
+    const dx=b.x-a.x,dy=b.y-a.y,l=Math.hypot(dx,dy);if(l<.01)continue;
+    const nx=dx/l,ny=dy/l;ctx.beginPath();ctx.moveTo(a.x-nx*3e3,a.y-ny*3e3);
+    ctx.lineTo(a.x+nx*3e3,a.y+ny*3e3);ctx.stroke()}ctx.setLineDash([])
+}
+function drawTP(ctx,pts,o,col='#4a8aff',lw=2.5){
+  if(pts.length<2)return;ctx.strokeStyle=col;ctx.lineWidth=lw;ctx.setLineDash([]);
+  ctx.beginPath();let p=w2c(pts[0],o);ctx.moveTo(p.x,p.y);
+  for(let i=1;i<pts.length;i++){p=w2c(pts[i],o);ctx.lineTo(p.x,p.y)}ctx.stroke();
+  ctx.fillStyle=col;
+  for(let i=0;i<pts.length-1;i++){
+    const a=w2c(pts[i],o),b=w2c(pts[i+1],o),mx=(a.x+b.x)/2,my=(a.y+b.y)/2;
+    const dx=b.x-a.x,dy=b.y-a.y,l=Math.hypot(dx,dy);if(l<12)continue;
+    const nx=dx/l,ny=dy/l;ctx.beginPath();
+    ctx.moveTo(mx+nx*6,my+ny*6);ctx.lineTo(mx-nx*4-ny*4,my-ny*4+nx*4);
+    ctx.lineTo(mx-nx*4+ny*4,my-ny*4-nx*4);ctx.fill()}
+}
+function drawLP(ctx,pts,o,col='#ff4466'){
+  if(pts.length<2)return;
+  ctx.strokeStyle=col+'40';ctx.lineWidth=6;ctx.setLineDash([]);
+  ctx.beginPath();let p=w2c(pts[0],o);ctx.moveTo(p.x,p.y);
+  for(let i=1;i<pts.length;i++){p=w2c(pts[i],o);ctx.lineTo(p.x,p.y)}ctx.stroke();
+  ctx.strokeStyle=col;ctx.lineWidth=2;ctx.beginPath();
+  p=w2c(pts[0],o);ctx.moveTo(p.x,p.y);
+  for(let i=1;i<pts.length;i++){p=w2c(pts[i],o);ctx.lineTo(p.x,p.y)}ctx.stroke();
+  ctx.fillStyle=col;
+  for(let i=1;i<pts.length-1;i++){p=w2c(pts[i],o);ctx.beginPath();ctx.arc(p.x,p.y,3.5,0,Math.PI*2);ctx.fill()}
+}
+function drawPt(ctx,pt,o,col,r=6,lbl=''){
+  const p=w2c(pt,o);ctx.fillStyle=col+'40';ctx.beginPath();ctx.arc(p.x,p.y,r+3,0,Math.PI*2);ctx.fill();
+  ctx.fillStyle=col;ctx.beginPath();ctx.arc(p.x,p.y,r,0,Math.PI*2);ctx.fill();
+  if(lbl){ctx.fillStyle=col;ctx.font='600 11px "DM Sans"';ctx.fillText(lbl,p.x+r+4,p.y+4)}
+}
+
+// ===== TAB SYSTEM =====
+let curTab=0;
+function buildUI(){
+  const bar=document.getElementById('tabBar'),pan=document.getElementById('panels');
+  TABS.forEach((t,i)=>{const b=document.createElement('button');b.className='tab'+(i===0?' on':'');
+    b.textContent=t;b.onclick=()=>switchTab(i);bar.appendChild(b)});
+  for(let i=0;i<TABS.length;i++){const d=document.createElement('div');d.className='pnl'+(i===0?' on':'');
+    d.id='p'+i;pan.appendChild(d)}
+  buildP0();buildP1();buildP2();buildP3();buildP4();buildP5();
+  switchTab(0);
+}
+function switchTab(i){
+  curTab=i;
+  document.querySelectorAll('.tab').forEach((t,j)=>t.classList.toggle('on',j===i));
+  document.querySelectorAll('.pnl').forEach((p,j)=>p.classList.toggle('on',j===i));
+  setTimeout(()=>[updateP0,updateP1,updateP2,updateP3,updateP4,updateP5][i](),50);
+}
+
+// ===== PANEL 0: MAIN =====
+function buildP0(){
+  document.getElementById('p0').innerHTML=`
+  <p class="ins" style="margin-top:0;margin-bottom:14px">
+    Enter a polynomial's coefficients. The <strong>turtle</strong> walks the path (blue), turning 90° counter-clockwise after each segment.
+    <strong>Drag on the canvas</strong> or use the slider to aim the laser from the start point. When the laser hits the endpoint, <strong>−tan(θ)</strong> is a root.
+  </p>
+  <div class="row"><div class="col-c">
+    <canvas id="c0" width="800" height="560"></canvas>
+    <div class="leg">
+      <div class="leg-i"><div class="leg-d" style="background:#4a8aff"></div>Turtle path</div>
+      <div class="leg-i"><div class="leg-d" style="background:#ff4466"></div>Laser beam</div>
+      <div class="leg-i"><div class="leg-d" style="background:#4fc3a0"></div>Start</div>
+      <div class="leg-i"><div class="leg-d" style="background:#e8a44a"></div>End</div>
+    </div>
+  </div><div class="col-r">
+    <div class="cg"><label>Coefficients (highest degree first)</label>
+      <input type=text id=ci0 value="1, 5, 7, 3"></div>
+    <div class="cg"><label>Polynomial</label><div class="pd" id=pd0></div></div>
+    <div class="cg"><label>Laser slope: <span id=sv0>1.00</span></label>
+      <input type=range id=sl0 min=-6 max=6 step=.01 value=1></div>
+    <div class="cg"><label>Presets</label><div class="flex-btns" id=pre0></div></div>
+    <div class="ib"><h4>Status</h4><div id=st0></div><div id=fr0></div></div>
+    <div class="ins"><strong>Key insight:</strong> The signed distance between laser endpoint and turtle endpoint
+      equals p(−tan θ). A hit means p(x)=0. The laser's bouncing geometry <em>is</em> Horner evaluation!</div>
+  </div></div>`;
+  const presets=[['1,5,7,3','x³+5x²+7x+3'],['1,-6,11,-6','x³−6x²+11x−6'],['1,0,-1','x²−1'],
+    ['1,2,-5,-6','x³+2x²−5x−6'],['3,5,-2','3x²+5x−2'],['1,0,0,0,-1','x⁴−1']];
+  const box=document.getElementById('pre0');
+  presets.forEach(([v,l])=>{const b=document.createElement('button');b.className='btn btn-s';b.textContent=l;
+    b.onclick=()=>{document.getElementById('ci0').value=v;updateP0()};box.appendChild(b)});
+  document.getElementById('ci0').addEventListener('input',updateP0);
+  document.getElementById('sl0').addEventListener('input',updateP0);
+  const cv=document.getElementById('c0');
+  let drag=false;
+  cv.addEventListener('mousedown',e=>{drag=true;aimP0(e)});
+  cv.addEventListener('mousemove',e=>{if(drag)aimP0(e)});
+  document.addEventListener('mouseup',()=>drag=false);
+  cv.addEventListener('touchstart',e=>{e.preventDefault();drag=true;aimP0(e.touches[0])},{passive:false});
+  cv.addEventListener('touchmove',e=>{e.preventDefault();if(drag)aimP0(e.touches[0])},{passive:false});
+  cv.addEventListener('touchend',()=>drag=false);
+}
+function aimP0(e){
+  const cv=document.getElementById('c0'),r=cv.getBoundingClientRect();
+  const c=parseC(document.getElementById('ci0').value);if(c.length<2)return;
+  const tp=turtlePath(c),{w,h}={w:r.width,h:r.height},o=autoS(tp,w,h);
+  const sp=w2c(tp[0],o),mx=e.clientX-r.left,my=e.clientY-r.top;
+  const dx=mx-sp.x,dy=my-sp.y;
+  if(Math.abs(dx)>5){const s=Math.max(-6,Math.min(6,-dy/dx));
+    document.getElementById('sl0').value=s;updateP0()}
+}
+function updateP0(){
+  const c=parseC(document.getElementById('ci0').value);if(c.length<2)return;
+  document.getElementById('pd0').textContent=polyStr(c);
+  const slope=+document.getElementById('sl0').value;
+  document.getElementById('sv0').textContent=slope.toFixed(2);
+  const cv=document.getElementById('c0'),{ctx,w,h}=setup(cv);
+  const tp=turtlePath(c),o=autoS(tp,w,h);
+  ctx.clearRect(0,0,w,h);drawGrid(ctx,w,h,o);drawLines(ctx,tp,o);drawTP(ctx,tp,o);
+  const res=laserPath(c,slope);drawLP(ctx,res.lp,o);
+  drawPt(ctx,tp[0],o,'#4fc3a0',7,'Start');drawPt(ctx,tp[tp.length-1],o,'#e8a44a',7,'End');
+  if(res.lp.length>1)drawPt(ctx,res.lp[res.lp.length-1],o,'#ff4466',4);
+  const x=-slope,pv=evalP(c,x);
+  let s=`Slope = <span class="val">${slope.toFixed(3)}</span> → x = −slope = <span class="val">${x.toFixed(3)}</span><br>`;
+  s+=`p(${x.toFixed(3)}) = <span class="val">${pv.toFixed(6)}</span><br>`;
+  s+=res.hit?`<span style="color:var(--acc);font-weight:600">✓ HIT! x = ${x.toFixed(4)} is a root!</span>`
+    :`Distance to target: <span class="val">${(res.dist||0).toFixed(4)}</span>`;
+  document.getElementById('st0').innerHTML=s;
+  const roots=findRoots(c);let rh='';
+  if(roots.length){rh='<div style="margin-top:6px;font-size:.83em;color:var(--txd)">Real roots (by scan):</div>';
+    roots.forEach(r=>rh+=`<span class="rb" style="background:var(--las)">${r.toFixed(4)}</span> `)}
+  document.getElementById('fr0').innerHTML=rh;
+}
+
+// ===== PANEL 1: THALES =====
+function buildP1(){
+  document.getElementById('p1').innerHTML=`
+  <p class="ins" style="margin-top:0;margin-bottom:14px">
+    For <strong>quadratics</strong>, Lill's method combines with <strong>Thales' theorem</strong>:
+    any angle inscribed in a semicircle is 90°. Connect start and end as a diameter, draw the circle —
+    its intersections with the middle segment's line give both roots instantly!
+  </p>
+  <div class="row"><div class="col-c">
+    <canvas id="c1" width="800" height="560"></canvas>
+    <div class="leg">
+      <div class="leg-i"><div class="leg-d" style="background:#4a8aff"></div>Turtle path</div>
+      <div class="leg-i"><div class="leg-d" style="background:#a78bfa"></div>Thales circle</div>
+      <div class="leg-i"><div class="leg-d" style="background:#ff4466"></div>Root paths</div>
+    </div>
+  </div><div class="col-r">
+    <div class="cg"><label>ax² + bx + c</label>
+      <div style="display:flex;gap:8px">
+        <div style="flex:1"><label>a</label><input type=number id=qa value=1></div>
+        <div style="flex:1"><label>b</label><input type=number id=qb value=3></div>
+        <div style="flex:1"><label>c</label><input type=number id=qc value=2></div>
+      </div></div>
+    <div class="cg"><label>Examples</label><div class="flex-btns" id=pre1></div></div>
+    <div class="ib" id=ti1></div>
+    <div class="ins"><strong>Why Thales?</strong> A quadratic laser path has exactly 2 segments meeting at 90°.
+      Thales says any point on a circle, joined to a diameter's endpoints, makes a right angle.
+      So the circle automatically encodes every valid laser path.</div>
+    <div class="ins warn"><strong>No intersections?</strong> The discriminant is negative → only complex roots.</div>
+  </div></div>`;
+  const pre=[['1,3,2','x²+3x+2'],['1,0,-4','x²−4'],['3,5,-2','3x²+5x−2'],['1,-5,6','x²−5x+6'],['1,2,5','x²+2x+5 (complex)']];
+  const box=document.getElementById('pre1');
+  pre.forEach(([v,l])=>{const b=document.createElement('button');b.className='btn btn-s';b.textContent=l;
+    b.onclick=()=>{const cc=parseC(v);document.getElementById('qa').value=cc[0];
+      document.getElementById('qb').value=cc[1];document.getElementById('qc').value=cc[2];updateP1()};box.appendChild(b)});
+  ['qa','qb','qc'].forEach(id=>document.getElementById(id).addEventListener('input',updateP1));
+}
+function updateP1(){
+  const a=+document.getElementById('qa').value||0,b=+document.getElementById('qb').value||0,
+    c=+document.getElementById('qc').value||0;if(a===0)return;
+  const co=[a,b,c],cv=document.getElementById('c1'),{ctx,w,h}=setup(cv);
+  const tp=turtlePath(co),o=autoS(tp,w,h,100);
+  ctx.clearRect(0,0,w,h);drawGrid(ctx,w,h,o);drawLines(ctx,tp,o);drawTP(ctx,tp,o);
+  const S=tp[0],E=tp[tp.length-1],cx=(S.x+E.x)/2,cy=(S.y+E.y)/2,rad=Math.hypot(E.x-S.x,E.y-S.y)/2;
+  const cc=w2c({x:cx,y:cy},o);
+  ctx.strokeStyle='#a78bfa';ctx.lineWidth=2;ctx.setLineDash([]);
+  ctx.beginPath();ctx.arc(cc.x,cc.y,rad*o.s,0,Math.PI*2);ctx.stroke();
+  ctx.strokeStyle='#a78bfa40';ctx.lineWidth=1;ctx.setLineDash([4,4]);
+  const s1=w2c(S,o),e1=w2c(E,o);ctx.beginPath();ctx.moveTo(s1.x,s1.y);ctx.lineTo(e1.x,e1.y);ctx.stroke();ctx.setLineDash([]);
+  // Middle segment line is vertical: x = tp[1].x
+  const segX=tp[1].x,d2=(segX-cx),disc=rad*rad-d2*d2;
+  let html=`<h4>Thales Circle</h4><div class="pd">${polyStr(co)} = 0</div>`;
+  html+=`Disc. (b²−4ac) = <span class="val">${(b*b-4*a*c).toFixed(2)}</span><br>`;
+  if(disc>=0){
+    const sq=Math.sqrt(disc),pts=[{x:segX,y:cy+sq},{x:segX,y:cy-sq}];
+    const cols=['#ff4466','#e8a44a'],roots=[];
+    const unique=disc>1e-10?pts:[pts[0]];
+    unique.forEach((pt,i)=>{
+      drawPt(ctx,pt,o,cols[i],5);
+      const lp0=w2c(pt,o);
+      ctx.strokeStyle=cols[i];ctx.lineWidth=2;ctx.setLineDash([]);
+      ctx.beginPath();ctx.moveTo(s1.x,s1.y);ctx.lineTo(lp0.x,lp0.y);ctx.lineTo(e1.x,e1.y);ctx.stroke();
+      const dx=pt.x-S.x,dy=pt.y-S.y;if(Math.abs(dx)>1e-10){roots.push(dy/dx)}
+    });
+    html+=`<div style="margin-top:6px">`;
+    roots.forEach((r,i)=>{const v=evalP(co,r);
+      html+=`Root ${i+1}: <span class="rb" style="background:${cols[i]}">${r.toFixed(5)}</span> &nbsp; check: p(r) = ${v.toFixed(8)}<br>`});
+    html+=`</div>`;
+  } else {
+    html+=`<div style="color:var(--las);margin-top:6px">No real roots — circle misses the middle line.</div>`;
+  }
+  document.getElementById('ti1').innerHTML=html;
+  drawPt(ctx,S,o,'#4fc3a0',7,'Start');drawPt(ctx,E,o,'#e8a44a',7,'End');
+}
+
+// ===== PANEL 2: TRANSFORMATIONS + ORIGAMI =====
+function buildP2(){
+  document.getElementById('p2').innerHTML=`
+  <p class="ins" style="margin-top:0;margin-bottom:14px">
+    Lill's diagram has <strong>geometric symmetries</strong> that reveal algebraic relationships.
+    Flipping the turtle path transforms the polynomial and its roots in predictable ways.
+    For cubics, this connects to <strong>origami</strong>: paper folds can solve cubic equations by
+    reflecting the start and end points onto auxiliary lines derived from the turtle path.
+  </p>
+  <div class="row"><div class="col-c">
+    <canvas id="c2" width="800" height="560"></canvas>
+    <div class="leg">
+      <div class="leg-i"><div class="leg-d" style="background:#4a8aff40"></div>Original path (dim)</div>
+      <div class="leg-i"><div class="leg-d" style="background:#a78bfa"></div>Transformed path</div>
+      <div class="leg-i"><div class="leg-d" style="background:#ff446680"></div>Fold / mirror line</div>
+    </div>
+  </div><div class="col-r">
+    <div class="cg"><label>Base polynomial</label><input type=text id=ci2 value="1, 5, 7, 3"></div>
+    <div class="cg"><label>Transformation</label>
+      <select id=tr2>
+        <option value=orig>Original (no change)</option>
+        <option value=flipv>Vertical flip → p(−x): roots become −r</option>
+        <option value=fliph>Horizontal flip → reciprocal: roots become 1/r</option>
+        <option value=rot>180° rotation → neg. reciprocal: roots become −1/r</option>
+        <option value=origami>Origami fold lines (cubic only)</option>
+      </select></div>
+    <div class="ib" id=ti2></div>
+    <div class="ins" id=ins2a><strong>Vertical flip</strong> negates every odd-power coefficient, giving p(−x).
+      If r is a root of p(x), then −r is a root of p(−x). On the canvas, this mirrors the path across the horizontal axis.</div>
+    <div class="ins" id=ins2b style="margin-top:8px"><strong>Horizontal flip</strong> reverses coefficient order → the reciprocal polynomial xⁿp(1/x).
+      Roots become 1/r. The path is mirrored across a vertical axis.</div>
+    <div class="ins" id=ins2c style="margin-top:8px"><strong>Origami (cubics):</strong> Beloch (1936) showed you can solve cubics by folding:
+      reflect the start point onto a horizontal guide line, and the end point onto a vertical guide line.
+      The fold crease gives the middle laser segment, pinning down a root. This is why origami is
+      <em>more powerful</em> than ruler-and-compass — it can solve cubics, which ruler-and-compass cannot.</div>
+  </div></div>`;
+  document.getElementById('ci2').addEventListener('input',updateP2);
+  document.getElementById('tr2').addEventListener('change',updateP2);
+}
+function updateP2(){
+  const c=parseC(document.getElementById('ci2').value);if(c.length<2)return;
+  const t=document.getElementById('tr2').value;
+  let nc,desc='',rootRule='';
+  if(t==='orig'){nc=[...c];desc='Original — no transformation.';rootRule=''}
+  else if(t==='flipv'){
+    nc=c.map((v,i)=>{const pw=c.length-1-i;return pw%2===1?-v:v});
+    desc='Vertical flip: negate odd-power coefficients → p(−x).';rootRule='r → −r'
+  } else if(t==='fliph'){
+    nc=[...c].reverse();desc='Reverse coefficients → reciprocal polynomial xⁿ·p(1/x).';rootRule='r → 1/r'
+  } else if(t==='rot'){
+    nc=[...c].reverse().map((v,i)=>{const pw=c.length-1-i;return pw%2===1?-v:v});
+    desc='Reverse + negate odd powers → xⁿ·p(−1/x).';rootRule='r → −1/r'
+  } else { nc=[...c];desc='Origami fold construction (cubic).'}
+
+  const cv=document.getElementById('c2'),{ctx,w,h}=setup(cv);
+  const otp=turtlePath(c),ntp=turtlePath(nc),all=[...otp,...ntp];
+  const o=autoS(all,w,h);
+  ctx.clearRect(0,0,w,h);drawGrid(ctx,w,h,o);
+
+  // Original (dimmed)
+  if(t!=='orig'){drawTP(ctx,otp,o,'#4a8aff30',1.5);
+    drawPt(ctx,otp[0],o,'#4fc3a030',4);drawPt(ctx,otp[otp.length-1],o,'#e8a44a30',4)}
+
+  if(t==='origami' && c.length===4){
+    // Draw origami construction
+    drawTP(ctx,otp,o,'#4a8aff',2.5);
+    const roots=findRoots(c);
+    if(roots.length>0){
+      const slope=-roots[0];
+      const res=laserPath(c,slope);
+      if(res.lp.length>=3){
+        drawLP(ctx,res.lp,o,'#ff4466');
+        // Guide lines: horizontal through reflected endpoint over seg 2, vertical through reflected start over seg 1
+        // Segment 2 is horizontal (from tp[2] to tp[3]): reflect end point (tp[3]) over this segment's line
+        // The end point is tp[3]. The segment 2 line is y=tp[2].y.
+        // Reflect tp[3] over y=tp[2].y → (tp[3].x, 2*tp[2].y - tp[3].y)
+        const tp=otp;
+        const reflEnd={x:tp[3].x, y:2*tp[2].y - tp[3].y};
+        // Draw horizontal guide through reflEnd
+        const hl=w2c({x:-50,y:reflEnd.y},o),hr=w2c({x:50,y:reflEnd.y},o);
+        ctx.strokeStyle='#4fc3a060';ctx.lineWidth=1.5;ctx.setLineDash([6,4]);
+        ctx.beginPath();ctx.moveTo(hl.x,hl.y);ctx.lineTo(hr.x,hr.y);ctx.stroke();
+
+        // Segment 1 is vertical (from tp[1] to tp[2]): reflect start point (tp[0]) over this line
+        // Line is x=tp[1].x. Reflect tp[0] → (2*tp[1].x - tp[0].x, tp[0].y)
+        const reflStart={x:2*tp[1].x - tp[0].x, y:tp[0].y};
+        const vt=w2c({x:reflStart.x,y:-50},o),vb=w2c({x:reflStart.x,y:50},o);
+        ctx.strokeStyle='#e8a44a60';ctx.lineWidth=1.5;
+        ctx.beginPath();ctx.moveTo(vt.x,vt.y);ctx.lineTo(vb.x,vb.y);ctx.stroke();
+        ctx.setLineDash([]);
+
+        // Draw reflected points
+        drawPt(ctx,reflEnd,o,'#4fc3a0',4,'End\'');
+        drawPt(ctx,reflStart,o,'#e8a44a',4,'Start\'');
+
+        // Draw fold line (middle laser segment, extended)
+        if(res.lp.length>=3){
+          const f0=res.lp[1],f1=res.lp[2];
+          const dx=f1.x-f0.x,dy=f1.y-f0.y,fl=Math.hypot(dx,dy);
+          if(fl>.01){
+            const nx=dx/fl,ny=dy/fl;
+            const fa=w2c({x:f0.x-nx*20,y:f0.y-ny*20},o),fb=w2c({x:f0.x+nx*20,y:f0.y+ny*20},o);
+            ctx.strokeStyle='#ff446680';ctx.lineWidth=1.5;ctx.setLineDash([8,4]);
+            ctx.beginPath();ctx.moveTo(fa.x,fa.y);ctx.lineTo(fb.x,fb.y);ctx.stroke();ctx.setLineDash([]);
+          }
+        }
+      }
+    }
+    drawPt(ctx,otp[0],o,'#4fc3a0',7,'Start');drawPt(ctx,otp[otp.length-1],o,'#e8a44a',7,'End');
+  } else {
+    // Draw mirror line for flip types
+    if(t==='flipv'){
+      // horizontal mirror through origin
+      const ml=w2c({x:-50,y:0},o),mr=w2c({x:50,y:0},o);
+      ctx.strokeStyle='#ff446640';ctx.lineWidth=1.5;ctx.setLineDash([6,4]);
+      ctx.beginPath();ctx.moveTo(ml.x,ml.y);ctx.lineTo(mr.x,mr.y);ctx.stroke();ctx.setLineDash([]);
+    } else if(t==='fliph'){
+      // vertical mirror through midpoint of start-end
+      const mx=(otp[0].x+otp[otp.length-1].x)/2;
+      const mt=w2c({x:mx,y:-50},o),mb=w2c({x:mx,y:50},o);
+      ctx.strokeStyle='#ff446640';ctx.lineWidth=1.5;ctx.setLineDash([6,4]);
+      ctx.beginPath();ctx.moveTo(mt.x,mt.y);ctx.lineTo(mb.x,mb.y);ctx.stroke();ctx.setLineDash([]);
+    }
+    drawTP(ctx,ntp,o,'#a78bfa');
+    drawPt(ctx,ntp[0],o,'#4fc3a0',7,'Start');drawPt(ctx,ntp[ntp.length-1],o,'#e8a44a',7,'End');
+  }
+
+  const or=findRoots(c),nr=findRoots(nc);
+  let html=`<h4>${t==='origami'?'Origami Fold':'Transformation'}</h4><div>${desc}</div>`;
+  html+=`<div style="margin-top:6px"><span style="color:var(--txd)">Original:</span> <span class="math">${polyStr(c)}</span></div>`;
+  if(t!=='origami')html+=`<div><span style="color:var(--txd)">Transformed:</span> <span class="math">${polyStr(nc)}</span></div>`;
+  if(rootRule)html+=`<div style="margin-top:4px"><span style="color:var(--txd)">Root rule:</span> <span class="val">${rootRule}</span></div>`;
+  html+=`<div style="margin-top:6px"><span style="color:var(--txd)">Original roots:</span> `;
+  or.forEach(r=>html+=`<span class="rb" style="background:var(--tp)">${r.toFixed(4)}</span> `);
+  if(t!=='origami'){
+    html+=`</div><div><span style="color:var(--txd)">Transformed roots:</span> `;
+    nr.forEach(r=>html+=`<span class="rb" style="background:var(--pur)">${r.toFixed(4)}</span> `);
+  }
+  if(t==='origami'&&c.length===4){
+    html+=`</div><div style="margin-top:8px;font-size:.85em;color:var(--txd)">
+      The <span style="color:#4fc3a0">green dashed line</span> is the horizontal guide (end reflected over segment 2).
+      The <span style="color:#e8a44a">orange dashed line</span> is the vertical guide (start reflected over segment 1).
+      The <span style="color:#ff4466">red dashed line</span> is the fold crease = middle laser segment.
+      Paper folding brings Start onto the green line and End onto the orange line simultaneously.</div>`;
+  }
+  html+=`</div>`;
+  document.getElementById('ti2').innerHTML=html;
+}
+
+// ===== PANEL 3: ITERATIVE DEFLATION =====
+let iterHistory=[];
+function buildP3(){
+  document.getElementById('p3').innerHTML=`
+  <p class="ins" style="margin-top:0;margin-bottom:14px">
+    Once you find a root, the <strong>laser beam path itself becomes a new turtle path</strong> for the
+    deflated polynomial (original ÷ (x − root)). Shoot that new path to find the next root, and repeat.
+    This is <strong>synthetic division made visual</strong>. Click "Find root & deflate" to step through.
+  </p>
+  <div class="row"><div class="col-c">
+    <canvas id="c3" width="800" height="560"></canvas>
+    <div class="leg">
+      <div class="leg-i"><div class="leg-d" style="background:#4a8aff"></div>Current turtle path</div>
+      <div class="leg-i"><div class="leg-d" style="background:#ff4466"></div>Laser (current aim)</div>
+      <div class="leg-i"><div class="leg-d" style="background:#4a8aff30"></div>Previous paths (dim)</div>
+    </div>
+  </div><div class="col-r">
+    <div class="cg"><label>Starting polynomial</label><input type=text id=ci3 value="1, 5, 7, 3"></div>
+    <div class="cg"><label>Laser slope: <span id=sv3>1.00</span></label>
+      <input type=range id=sl3 min=-6 max=6 step=.01 value=1></div>
+    <div class="cg" style="display:flex;gap:6px">
+      <button class="btn" id=defBtn onclick="doDeflate()">Find root & deflate →</button>
+      <button class="btn btn-s" onclick="resetIter()">Reset</button>
+    </div>
+    <div class="ib" id=ti3></div>
+    <div class="ins"><strong>Why does this work?</strong> The laser segments' lengths are the Horner intermediate values —
+      which are exactly the coefficients of the quotient after dividing by (x − root).
+      So the laser path for one polynomial literally <em>is</em> the turtle path for the next.</div>
+    <div class="ins warn" style="margin-top:8px"><strong>Multiplicities:</strong> Iterative deflation finds repeated roots
+      (multiplicity > 1), unlike simple sweeping. If x=−1 is a double root, it appears at two separate deflation steps.</div>
+  </div></div>`;
+  document.getElementById('ci3').addEventListener('input',()=>{resetIter();updateP3()});
+  document.getElementById('sl3').addEventListener('input',updateP3);
+  const cv=document.getElementById('c3');
+  let drag=false;
+  cv.addEventListener('mousedown',e=>{drag=true;aimP3(e)});
+  cv.addEventListener('mousemove',e=>{if(drag)aimP3(e)});
+  document.addEventListener('mouseup',()=>drag=false);
+  cv.addEventListener('touchstart',e=>{e.preventDefault();drag=true;aimP3(e.touches[0])},{passive:false});
+  cv.addEventListener('touchmove',e=>{e.preventDefault();if(drag)aimP3(e.touches[0])},{passive:false});
+  cv.addEventListener('touchend',()=>drag=false);
+  resetIter();
+}
+function resetIter(){
+  const c=parseC(document.getElementById('ci3').value);
+  iterHistory=[{coeffs:c,root:null,slope:null}];
+  document.getElementById('sl3').value=0;
+  updateP3();
+}
+function doDeflate(){
+  const cur=iterHistory[iterHistory.length-1];
+  if(!cur||cur.coeffs.length<2)return;
+  const slope=+document.getElementById('sl3').value;
+  const x=-slope,pv=evalP(cur.coeffs,x);
+  // Snap to root if close
+  const roots=findRoots(cur.coeffs);
+  let best=x;
+  roots.forEach(r=>{if(Math.abs(r-x)<Math.abs(best-x)+.01)best=r}); // prefer actual root
+  // Find closest root to current x
+  let closestRoot=null,closestDist=Infinity;
+  roots.forEach(r=>{const d=Math.abs(r-x);if(d<closestDist){closestDist=d;closestRoot=r}});
+  if(closestRoot===null||closestDist>0.5){
+    // No root close enough — show warning
+    updateP3('⚠ No root near current x. Adjust the slider closer to a root, then click again.');
+    return;
+  }
+  // Deflate
+  const newC=deflate(cur.coeffs,closestRoot);
+  cur.root=closestRoot;cur.slope=-closestRoot;
+  iterHistory.push({coeffs:newC,root:null,slope:null});
+  document.getElementById('sl3').value=0;
+  updateP3();
+}
+function aimP3(e){
+  const cv=document.getElementById('c3'),r=cv.getBoundingClientRect();
+  const cur=iterHistory[iterHistory.length-1];if(!cur||cur.coeffs.length<2)return;
+  const tp=turtlePath(cur.coeffs),{w,h}={w:r.width,h:r.height},o=autoS(tp,w,h);
+  const sp=w2c(tp[0],o),mx=e.clientX-r.left,my=e.clientY-r.top;
+  const dx=mx-sp.x,dy=my-sp.y;
+  if(Math.abs(dx)>5){const s=Math.max(-6,Math.min(6,-dy/dx));
+    document.getElementById('sl3').value=s;updateP3()}
+}
+function updateP3(warning){
+  const cur=iterHistory[iterHistory.length-1];
+  if(!cur||cur.coeffs.length<2)return;
+  const c=cur.coeffs;
+  const slope=+document.getElementById('sl3').value;
+  document.getElementById('sv3').textContent=slope.toFixed(2);
+
+  const cv=document.getElementById('c3'),{ctx,w,h}=setup(cv);
+
+  // Collect all points for auto-scale
+  let allPts=[];
+  iterHistory.forEach(st=>allPts.push(...turtlePath(st.coeffs)));
+  const o=autoS(allPts,w,h);
+
+  ctx.clearRect(0,0,w,h);drawGrid(ctx,w,h,o);
+
+  // Draw previous paths dimmed
+  const pathCols=['#4a8aff','#a78bfa','#4fc3a0','#e8a44a','#ff4466'];
+  for(let i=0;i<iterHistory.length-1;i++){
+    const tp=turtlePath(iterHistory[i].coeffs);
+    drawTP(ctx,tp,o,pathCols[i%pathCols.length]+'40',1.5);
+    // Draw the successful laser for this step
+    if(iterHistory[i].slope!==null){
+      const res=laserPath(iterHistory[i].coeffs,-iterHistory[i].root);
+      // Dim laser
+      ctx.strokeStyle=pathCols[i%pathCols.length]+'30';ctx.lineWidth=1.5;ctx.setLineDash([4,3]);
+      ctx.beginPath();let p=w2c(res.lp[0],o);ctx.moveTo(p.x,p.y);
+      for(let j=1;j<res.lp.length;j++){p=w2c(res.lp[j],o);ctx.lineTo(p.x,p.y)}
+      ctx.stroke();ctx.setLineDash([]);
+    }
+  }
+
+  // Current turtle path
+  const tp=turtlePath(c);
+  drawLines(ctx,tp,o);
+  drawTP(ctx,tp,o);
+
+  // Current laser
+  const res=laserPath(c,slope);
+  drawLP(ctx,res.lp,o);
+  drawPt(ctx,tp[0],o,'#4fc3a0',7,'Start');drawPt(ctx,tp[tp.length-1],o,'#e8a44a',7,'End');
+
+  // Info
+  const x=-slope,pv=evalP(c,x);
+  const deg=c.length-1;
+  const roots=findRoots(c);
+  let html=`<h4>Deflation Step ${iterHistory.length-1} — degree ${deg}</h4>`;
+  html+=`<div class="pd">${polyStr(c)} = 0</div>`;
+
+  // Show history
+  if(iterHistory.length>1){
+    html+=`<div style="margin-top:6px;font-size:.83em;color:var(--txd)">Roots found so far:</div>`;
+    iterHistory.forEach((st,i)=>{if(st.root!==null)
+      html+=`<span class="rb" style="background:${pathCols[i%pathCols.length]}">${st.root.toFixed(4)}</span> `});
+  }
+
+  html+=`<div style="margin-top:8px">Slope = <span class="val">${slope.toFixed(3)}</span> → x = <span class="val">${x.toFixed(3)}</span>`;
+  html+=` → p(x) = <span class="val">${pv.toFixed(5)}</span></div>`;
+  if(res.hit)html+=`<div style="color:var(--acc);font-weight:600">✓ HIT!</div>`;
+
+  if(roots.length){
+    html+=`<div style="margin-top:6px;font-size:.83em;color:var(--txd)">Roots of current poly: `;
+    roots.forEach(r=>html+=`<span class="rb" style="background:var(--tp)">${r.toFixed(4)}</span> `);
+    html+=`</div>`;
+  }
+
+  if(deg<=1&&c.length===2){
+    html+=`<div style="margin-top:6px;color:var(--acc)">Linear equation — root is ${(-c[1]/c[0]).toFixed(4)}. Deflation complete!</div>`;
+    document.getElementById('defBtn').disabled=true;
+  } else {
+    document.getElementById('defBtn').disabled=false;
+  }
+
+  if(warning)html+=`<div style="margin-top:6px;color:var(--acc2)">${warning}</div>`;
+
+  document.getElementById('ti3').innerHTML=html;
+}
+
+// ===== PANEL 4: WHY IT WORKS =====
+function buildP4(){
+  document.getElementById('p4').innerHTML=`
+  <p class="ins" style="margin-top:0;margin-bottom:14px">
+    Lill's method is a <strong>visual incarnation of Horner's method</strong> (synthetic division).
+    Each laser bounce computes one step of the nested evaluation ((ax+b)x+c)x+d.
+    The annotated values below show how intermediate Horner results appear as distances in the geometry.
+  </p>
+  <div class="row"><div class="col-c">
+    <canvas id="c4" width="800" height="560"></canvas>
+    <div class="leg">
+      <div class="leg-i"><div class="leg-d" style="background:#4a8aff"></div>Turtle segments (coefficients)</div>
+      <div class="leg-i"><div class="leg-d" style="background:#4fc3a0"></div>Horner intermediate values</div>
+      <div class="leg-i"><div class="leg-d" style="background:#ff4466"></div>Final value = p(x)</div>
+    </div>
+  </div><div class="col-r">
+    <div class="cg"><label>Polynomial</label><input type=text id=ci4 value="1, 5, 7, 3"></div>
+    <div class="cg"><label>Evaluate at x = <span id=xv4>-1.0</span></label>
+      <input type=range id=sl4 min=-5 max=5 step=.1 value=-1></div>
+    <div class="ib" id=ti4></div>
+    <div class="ib" id=tt4></div>
+    <div class="ins"><strong>Core idea:</strong> For p(x) = ax³+bx²+cx+d, the Horner form is ((ax+b)x+c)x+d.
+      Each "multiply by x, add next coefficient" = one laser bounce. Right triangles with tan θ = −x do the multiplication.</div>
+    <div class="ins warn" style="margin-top:8px"><strong>Synthetic division bonus:</strong> The intermediate values aren't just
+      computational steps — they're the quotient's coefficients when dividing p(x) by (x−r).
+      One evaluation gives you both p(r) <em>and</em> the deflated polynomial for free!</div>
+  </div></div>`;
+  document.getElementById('ci4').addEventListener('input',updateP4);
+  document.getElementById('sl4').addEventListener('input',updateP4);
+}
+function updateP4(){
+  const c=parseC(document.getElementById('ci4').value);if(c.length<2)return;
+  const x=+document.getElementById('sl4').value;
+  document.getElementById('xv4').textContent=x.toFixed(1);
+  const slope=-x,steps=horner(c,x);
+  const cv=document.getElementById('c4'),{ctx,w,h}=setup(cv);
+  const tp=turtlePath(c),o=autoS(tp,w,h);
+  ctx.clearRect(0,0,w,h);drawGrid(ctx,w,h,o);drawLines(ctx,tp,o);drawTP(ctx,tp,o);
+  const res=laserPath(c,slope);drawLP(ctx,res.lp,o);
+  // Annotate Horner values on bounce points
+  ctx.font='bold 12px "JetBrains Mono"';ctx.textAlign='center';
+  for(let i=0;i<res.lp.length&&i<steps.length;i++){
+    const p=w2c(res.lp[i],o),lbl=steps[i].toFixed(2);
+    const tw=ctx.measureText(lbl).width;
+    ctx.fillStyle='#0c0f14dd';ctx.fillRect(p.x-tw/2-4,p.y-24,tw+8,19);
+    ctx.fillStyle=i===steps.length-1?'#ff4466':'#4fc3a0';
+    ctx.fillText(lbl,p.x,p.y-10)}
+  ctx.textAlign='left';
+  // Coefficient labels on segments
+  ctx.font='11px "JetBrains Mono"';
+  for(let i=0;i<c.length;i++){
+    const mid={x:(tp[i].x+tp[i+1].x)/2,y:(tp[i].y+tp[i+1].y)/2};
+    const p=w2c(mid,o),lbl='c'+i+'='+c[i],tw=ctx.measureText(lbl).width;
+    ctx.fillStyle='#0c0f14dd';ctx.fillRect(p.x-tw/2-3,p.y+4,tw+6,16);
+    ctx.fillStyle='#4a8aff';ctx.textAlign='center';ctx.fillText(lbl,p.x,p.y+16)}
+  ctx.textAlign='left';
+  drawPt(ctx,tp[0],o,'#4fc3a0',7,'Start');drawPt(ctx,tp[tp.length-1],o,'#e8a44a',7,'End');
+  // Info
+  const pv=steps[steps.length-1];
+  let html=`<h4>Horner at x = ${x.toFixed(1)}</h4>`;
+  html+=`<div class="pd">${polyStr(c)}</div>`;
+  html+=`Slope = −x = <span class="val">${slope.toFixed(2)}</span><br>`;
+  html+=`p(${x.toFixed(1)}) = <span class="val" style="${Math.abs(pv)<.05?'color:#ff4466':''}">${pv.toFixed(4)}</span>`;
+  if(Math.abs(pv)<.05)html+=` <span style="color:var(--acc)">≈ 0 (root!)</span>`;
+  document.getElementById('ti4').innerHTML=html;
+  // Table
+  let t=`<h4>Synthetic Division</h4><table class="htbl"><tr><th></th>`;
+  for(let i=0;i<c.length;i++){const pw=c.length-1-i;t+=`<th>${pw>0?'x'+(pw>1?'<sup>'+pw+'</sup>':''):'const'}</th>`}
+  t+=`</tr><tr><td style="color:var(--txd)">Coeff</td>`;c.forEach(v=>t+=`<td>${v}</td>`);
+  t+=`</tr><tr><td style="color:var(--txd)">×${x.toFixed(1)}+carry</td><td>—</td>`;
+  for(let i=1;i<c.length;i++)t+=`<td style="color:var(--acc2)">${(steps[i-1]*x).toFixed(2)}</td>`;
+  t+=`</tr><tr><td style="color:var(--txd)">Result</td>`;
+  steps.forEach((s,i)=>{const last=i===steps.length-1;
+    t+=`<td style="color:${last?(Math.abs(s)<.05?'#ff4466':'var(--acc2)'):'var(--acc)'}; font-weight:600">${s.toFixed(2)}</td>`});
+  t+=`</tr></table>`;
+  t+=`<div style="margin-top:8px;font-size:.8em;color:var(--txd)">
+    Top row [${steps.slice(0,-1).map(s=>s.toFixed(2)).join(', ')}] = quotient coefficients q(x) when dividing by (x − ${x.toFixed(1)}).<br>
+    Last value <strong style="color:${Math.abs(pv)<.05?'#ff4466':'var(--acc2)'}">${pv.toFixed(2)}</strong> = remainder = p(${x.toFixed(1)}).</div>`;
+  document.getElementById('tt4').innerHTML=t;
+}
+
+// ===== PANEL 5: PASCAL'S TRIANGLE =====
+function buildP5(){
+  document.getElementById('p5').innerHTML=`
+  <p class="ins" style="margin-top:0;margin-bottom:14px">
+    The rows of <strong>Pascal's triangle</strong> are the coefficients of (1+x)ⁿ. When we draw the Lill turtle path
+    for each row, something beautiful emerges: the paths nest inside each other, forming a geometric incarnation
+    of Pascal's triangle. Each path's vertices land on predictable grid positions because the binomial coefficients
+    grow in a structured way. This was highlighted by Mathologer as a potentially original discovery.
+  </p>
+  <div class="row"><div class="col-c">
+    <canvas id="c5" width="800" height="600"></canvas>
+    <div class="leg">
+      <div class="leg-i"><div class="leg-d" style="background:#ff4466"></div>Row n paths</div>
+      <div class="leg-i"><div class="leg-d" style="background:#4fc3a0"></div>Start points</div>
+      <div class="leg-i"><div class="leg-d" style="background:#e8a44a"></div>End points</div>
+    </div>
+  </div><div class="col-r">
+    <div class="cg"><label>Max row n (0 to 10)</label>
+      <input type=range id=pn min=0 max=10 step=1 value=6 oninput="updateP5()">
+      <div style="font-family:'JetBrains Mono',monospace;font-size:.85em;color:var(--acc)" id=pnv>n = 6</div></div>
+    <div class="cg">
+      <label>Animate</label>
+      <button class="btn" id=animBtn onclick="toggleAnim()">▶ Play</button>
+    </div>
+    <div class="ib" id=ti5></div>
+    <div class="ins"><strong>Why Pascal?</strong> The coefficients of (1+x)ⁿ are C(n,0), C(n,1), C(n,2), ...
+      Each turtle path has n+1 segments, and consecutive rows share the recursive structure C(n,k) = C(n−1,k−1)+C(n−1,k).
+      This means each new path's vertices relate to the previous row's path in a geometric echo of Pascal's addition rule.</div>
+    <div class="ins warn" style="margin-top:8px"><strong>All paths share a root at x = −1</strong> because (1+x)ⁿ always
+      has −1 as a root (with multiplicity n). A horizontal laser (slope = 1) always hits the endpoint.
+      This corresponds to the fact that (1+(−1))ⁿ = 0 for n ≥ 1.</div>
+    <div class="ib" id=pt5></div>
+  </div></div>`;
+}
+
+function binomRow(n){
+  const r=[1];for(let k=1;k<=n;k++)r.push(r[r.length-1]*(n-k+1)/k);return r}
+
+let animId=null;
+function toggleAnim(){
+  const btn=document.getElementById('animBtn');
+  if(animId){cancelAnimationFrame(animId);animId=null;btn.textContent='▶ Play';return}
+  btn.textContent='⏸ Pause';
+  let t=0;
+  function step(){
+    t+=0.02;const n=Math.floor(t)%11;
+    document.getElementById('pn').value=n;updateP5();
+    if(t%1<0.02||t%1>0.95)animId=requestAnimationFrame(step);
+    else animId=requestAnimationFrame(step);
+    // slow down: hold each row for ~2 seconds at 60fps
+    if(Math.floor(t*30)%60<59)animId=requestAnimationFrame(step);
+  }
+  // Simpler: just increment every second
+  let row=0;
+  function tick(){
+    document.getElementById('pn').value=row;updateP5();
+    row=(row+1)%11;
+    animId=setTimeout(tick,800);
+  }
+  tick();
+  btn.onclick=()=>{clearTimeout(animId);animId=null;btn.textContent='▶ Play';btn.onclick=toggleAnim};
+}
+
+function updateP5(){
+  const maxN=+document.getElementById('pn').value;
+  document.getElementById('pnv').textContent='n = '+maxN;
+  const cv=document.getElementById('c5'),{ctx,w,h}=setup(cv);
+
+  // Compute all paths
+  const allPaths=[];
+  for(let n=0;n<=maxN;n++){
+    const row=binomRow(n);
+    allPaths.push({n,coeffs:row,pts:turtlePath(row)});
+  }
+
+  // Collect all points for scaling
+  let allPts=[];
+  allPaths.forEach(p=>allPts.push(...p.pts));
+  if(!allPts.length)allPts=[{x:0,y:0}];
+  const o=autoS(allPts,w,h,60);
+
+  ctx.clearRect(0,0,w,h);drawGrid(ctx,w,h,o);
+
+  // Color gradient
+  const colors=[];
+  for(let i=0;i<=maxN;i++){
+    const t=maxN>0?i/maxN:0;
+    const r=Math.round(255*(.3+.7*t));
+    const g=Math.round(100*(1-t)+200*t);
+    const b=Math.round(255*(1-t*.6));
+    colors.push(`rgb(${r},${g},${b})`);
+  }
+
+  // Draw paths from largest to smallest (so smaller ones are on top)
+  for(let i=allPaths.length-1;i>=0;i--){
+    const {pts,n}=allPaths[i];
+    const alpha=i===allPaths.length-1?'':'90';
+    const col=colors[i];
+    // Draw path
+    if(pts.length>=2){
+      ctx.strokeStyle=col+alpha;ctx.lineWidth=i===allPaths.length-1?3:1.8;ctx.setLineDash([]);
+      ctx.beginPath();let p=w2c(pts[0],o);ctx.moveTo(p.x,p.y);
+      for(let j=1;j<pts.length;j++){p=w2c(pts[j],o);ctx.lineTo(p.x,p.y)}
+      ctx.stroke();
+    }
+    // Draw vertices
+    for(let j=0;j<pts.length;j++){
+      const p=w2c(pts[j],o);
+      ctx.fillStyle=col+(i===allPaths.length-1?'':'60');
+      ctx.beginPath();ctx.arc(p.x,p.y,i===allPaths.length-1?4:2.5,0,Math.PI*2);ctx.fill();
+    }
+    // Label row number at start
+    if(i===allPaths.length-1||maxN<=6){
+      const sp=w2c(pts[0],o);
+      ctx.fillStyle=col;ctx.font='bold 10px "JetBrains Mono"';ctx.textAlign='right';
+      ctx.fillText('n='+n,sp.x-8,sp.y+4);ctx.textAlign='left';
+    }
+  }
+
+  // Highlight start and end of latest
+  if(allPaths.length){
+    const latest=allPaths[allPaths.length-1].pts;
+    drawPt(ctx,latest[0],o,'#4fc3a0',5,'Start');
+    drawPt(ctx,latest[latest.length-1],o,'#e8a44a',5,'End');
+
+    // Draw laser path for slope=1 (the universal root x=-1) on latest
+    if(maxN>=1){
+      const res=laserPath(allPaths[allPaths.length-1].coeffs,1);
+      if(res.hit){
+        drawLP(ctx,res.lp,o,'#ff446660');
+      }
+    }
+  }
+
+  // Info
+  let html=`<h4>Pascal's Triangle as Turtle Paths</h4>`;
+  html+=`<div style="margin-top:4px">`;
+  for(let n=0;n<=maxN;n++){
+    const row=binomRow(n);
+    html+=`<div style="font-family:'JetBrains Mono',monospace;font-size:.8em;color:${colors[n]}">`;
+    html+=`n=${n}: [${row.join(', ')}]`;
+    if(n<=6)html+=` → (1+x)${supN(n)}`;
+    html+=`</div>`;
+  }
+  html+=`</div>`;
+  document.getElementById('ti5').innerHTML=html;
+
+  // Pascal triangle visual
+  let pt=`<h4>Pascal's Triangle</h4><div style="text-align:center;font-family:'JetBrains Mono',monospace;font-size:.75em;line-height:1.8">`;
+  for(let n=0;n<=Math.min(maxN,10);n++){
+    const row=binomRow(n);
+    pt+=`<div style="color:${colors[n]}">`;
+    row.forEach(v=>pt+=`<span style="display:inline-block;width:32px">${v}</span>`);
+    pt+=`</div>`;
+  }
+  pt+=`</div>`;
+  document.getElementById('pt5').innerHTML=pt;
+}
+
+// ===== INIT =====
+window.addEventListener('resize',()=>switchTab(curTab));
+buildUI();
+</script>
+</body>
+</html>
