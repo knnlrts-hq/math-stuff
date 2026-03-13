@@ -1,0 +1,675 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Cardano Cubic Identity Animation</title>
+  <style>
+    :root {
+      --bg1: #f8fafc;
+      --bg2: #eef2ff;
+      --panel: rgba(255,255,255,0.88);
+      --border: rgba(15,23,42,0.08);
+      --text: #0f172a;
+      --muted: #475569;
+      --shadow: 0 18px 48px rgba(15,23,42,0.10);
+    }
+
+    * { box-sizing: border-box; }
+    html, body { height: 100%; }
+    body {
+      margin: 0;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: var(--text);
+      background: linear-gradient(135deg, var(--bg1), #ffffff 45%, var(--bg2));
+    }
+
+    .wrap {
+      max-width: 1220px;
+      margin: 0 auto;
+      padding: 24px;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1.3fr) minmax(320px, 0.7fr);
+      gap: 24px;
+      align-items: start;
+    }
+
+    .card {
+      background: var(--panel);
+      backdrop-filter: blur(10px);
+      border: 1px solid var(--border);
+      border-radius: 28px;
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .card-inner {
+      padding: 24px;
+    }
+
+    h1 {
+      margin: 0 0 8px;
+      font-size: 30px;
+      line-height: 1.1;
+      letter-spacing: -0.03em;
+    }
+
+    .subtitle {
+      margin: 0;
+      color: var(--muted);
+      font-size: 15px;
+      line-height: 1.6;
+    }
+
+    .viewport {
+      margin-top: 18px;
+      border-radius: 24px;
+      border: 1px solid var(--border);
+      background: linear-gradient(180deg, rgba(255,255,255,0.96), rgba(248,250,252,0.96));
+      overflow: hidden;
+      position: relative;
+    }
+
+    svg {
+      display: block;
+      width: 100%;
+      height: auto;
+      aspect-ratio: 16 / 11;
+    }
+
+    .overlay-formula {
+      position: absolute;
+      top: 16px;
+      left: 16px;
+      background: rgba(255,255,255,0.9);
+      border: 1px solid rgba(15,23,42,0.08);
+      border-radius: 14px;
+      padding: 10px 14px;
+      font-weight: 700;
+      font-size: 18px;
+      letter-spacing: -0.02em;
+      box-shadow: 0 8px 24px rgba(15,23,42,0.06);
+      z-index: 2;
+    }
+
+    .controls {
+      margin-top: 18px;
+      display: grid;
+      gap: 16px;
+    }
+
+    .row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .buttons {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    button {
+      border: 1px solid rgba(15,23,42,0.10);
+      background: white;
+      color: var(--text);
+      border-radius: 16px;
+      padding: 10px 14px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      box-shadow: 0 3px 12px rgba(15,23,42,0.05);
+      transition: transform 0.15s ease;
+    }
+
+    button:hover { transform: translateY(-1px); }
+    button:active { transform: translateY(0); }
+
+    .control-block {
+      display: grid;
+      gap: 8px;
+      width: 100%;
+    }
+
+    .control-label {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: 12px;
+      font-size: 14px;
+      color: var(--muted);
+    }
+
+    .control-label strong {
+      color: var(--text);
+      font-weight: 700;
+    }
+
+    input[type="range"] {
+      width: 100%;
+      accent-color: #334155;
+      cursor: pointer;
+    }
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+      margin-top: 16px;
+    }
+
+    .pill {
+      background: rgba(248,250,252,0.95);
+      border: 1px solid rgba(15,23,42,0.08);
+      border-radius: 16px;
+      padding: 12px 14px;
+    }
+
+    .pill-label {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.14em;
+      color: #64748b;
+      margin-bottom: 4px;
+    }
+
+    .pill-value {
+      font-size: 18px;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+
+    .side h2 {
+      margin: 0 0 14px;
+      font-size: 22px;
+      letter-spacing: -0.02em;
+    }
+
+    .side p {
+      margin: 0 0 14px;
+      color: var(--muted);
+      font-size: 15px;
+      line-height: 1.7;
+    }
+
+    .callout {
+      margin-top: 14px;
+      padding: 16px;
+      border-radius: 20px;
+      background: linear-gradient(180deg, rgba(248,250,252,0.95), rgba(241,245,249,0.95));
+      border: 1px solid rgba(15,23,42,0.06);
+    }
+
+    .callout .tiny {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.16em;
+      color: #64748b;
+      font-weight: 700;
+      margin-bottom: 6px;
+    }
+
+    .callout .big {
+      font-size: 17px;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      color: var(--text);
+      line-height: 1.4;
+    }
+
+    .test-box {
+      margin-top: 16px;
+      padding: 12px 14px;
+      border-radius: 16px;
+      background: rgba(15,23,42,0.03);
+      border: 1px solid rgba(15,23,42,0.06);
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    .test-box strong {
+      color: var(--text);
+    }
+
+    .test-box ul {
+      margin: 8px 0 0;
+      padding-left: 18px;
+    }
+
+    @media (max-width: 980px) {
+      .grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="grid">
+      <section class="card">
+        <div class="card-inner">
+          <h1>Cardano’s cubic identity as volume</h1>
+          <p class="subtitle">
+            Start from one cube of side <strong>u+v</strong>, then pull it apart into a blue cube <strong>u³</strong>,
+            a pink cube <strong>v³</strong>, and three matching prisms of volume <strong>uv(u+v)</strong> each.
+          </p>
+
+          <div class="viewport">
+            <div class="overlay-formula" id="formulaText">(u+v)³ = u³ + v³ + 3uv(u+v)</div>
+            <svg id="scene" viewBox="0 0 960 660" aria-label="Animated geometric decomposition of (u+v)^3"></svg>
+          </div>
+
+          <div class="controls">
+            <div class="row">
+              <div class="buttons">
+                <button id="playBtn" type="button">Pause</button>
+                <button id="resetBtn" type="button">Reset</button>
+              </div>
+            </div>
+
+            <div class="control-block">
+              <div class="control-label">
+                <span>Decomposition</span>
+                <strong id="explodeValue">0.50</strong>
+              </div>
+              <input id="progressSlider" type="range" min="0" max="1000" value="500" />
+            </div>
+
+            <div class="control-block">
+              <div class="control-label">
+                <span>Proportion of <strong>u</strong> versus <strong>v</strong></span>
+                <strong id="uvValue">u = 0.68, v = 0.32</strong>
+              </div>
+              <input id="ratioSlider" type="range" min="15" max="85" value="68" />
+            </div>
+
+            <div class="stats">
+              <div class="pill">
+                <div class="pill-label">Side lengths</div>
+                <div class="pill-value" id="sideText">u = 102, v = 48</div>
+              </div>
+              <div class="pill">
+                <div class="pill-label">Three prisms together</div>
+                <div class="pill-value" id="prismText">3 × 102 × 48 × 150</div>
+              </div>
+            </div>
+
+            <div class="test-box" id="testBox">
+              <strong>Self-checks:</strong>
+              <ul id="testResults"></ul>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <aside class="card side">
+        <div class="card-inner">
+          <h2>What the animation shows</h2>
+          <p>
+            The full body is a cube with side length <strong>u+v</strong>, so its volume is <strong>(u+v)³</strong>.
+          </p>
+          <p>
+            The dissection separates out one cube of volume <strong>u³</strong>, one cube of volume <strong>v³</strong>,
+            and three congruent rectangular boxes with dimensions <strong>u × v × (u+v)</strong>.
+          </p>
+          <p>
+            Because there are exactly three such boxes, their combined contribution is <strong>3uv(u+v)</strong>.
+          </p>
+
+          <div class="callout">
+            <div class="tiny">Geometric heartbeat</div>
+            <div class="big">
+              The cubic expansion becomes a clean spatial dissection you can literally pull apart.
+            </div>
+          </div>
+        </div>
+      </aside>
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      const svg = document.getElementById('scene');
+      const playBtn = document.getElementById('playBtn');
+      const resetBtn = document.getElementById('resetBtn');
+      const progressSlider = document.getElementById('progressSlider');
+      const ratioSlider = document.getElementById('ratioSlider');
+      const explodeValue = document.getElementById('explodeValue');
+      const uvValue = document.getElementById('uvValue');
+      const sideText = document.getElementById('sideText');
+      const prismText = document.getElementById('prismText');
+      const formulaText = document.getElementById('formulaText');
+      const testResults = document.getElementById('testResults');
+
+      const COS = Math.cos(Math.PI / 6);
+      const SIN = Math.sin(Math.PI / 6);
+      const CX = 470;
+      const CY = 390;
+      const TOTAL = 150;
+      const SVG_NS = 'http://www.w3.org/2000/svg';
+      const DURATION = 5400;
+
+      let playing = true;
+      let progress = 0.5;
+      let ratio = 0.68;
+      let raf = null;
+      let startTime = null;
+
+      function iso(x, y, z) {
+        return {
+          x: (x - y) * COS,
+          y: (x + y) * SIN - z
+        };
+      }
+
+      function ptsToStr(points) {
+        return points.map(function (pt) {
+          const p = iso(pt[0], pt[1], pt[2]);
+          return (p.x + CX).toFixed(2) + ',' + (p.y + CY).toFixed(2);
+        }).join(' ');
+      }
+
+      function shade(hex, amount) {
+        const clean = hex.replace('#', '');
+        const num = parseInt(clean, 16);
+        let r = (num >> 16) + amount;
+        let g = ((num >> 8) & 255) + amount;
+        let b = (num & 255) + amount;
+        r = Math.max(0, Math.min(255, r));
+        g = Math.max(0, Math.min(255, g));
+        b = Math.max(0, Math.min(255, b));
+        return 'rgb(' + r + ', ' + g + ', ' + b + ')';
+      }
+
+      function create(tag, attrs) {
+        const el = document.createElementNS(SVG_NS, tag);
+        const safeAttrs = attrs || {};
+        Object.keys(safeAttrs).forEach(function (k) {
+          el.setAttribute(k, safeAttrs[k]);
+        });
+        return el;
+      }
+
+      function drawCuboid(group, x, y, z, dx, dy, dz, color, opacity, stroke) {
+        const actualOpacity = opacity == null ? 1 : opacity;
+        const actualStroke = stroke || 'rgba(15,23,42,0.34)';
+
+        const top = [
+          [x, y, z + dz],
+          [x + dx, y, z + dz],
+          [x + dx, y + dy, z + dz],
+          [x, y + dy, z + dz]
+        ];
+        const right = [
+          [x + dx, y, z],
+          [x + dx, y + dy, z],
+          [x + dx, y + dy, z + dz],
+          [x + dx, y, z + dz]
+        ];
+        const left = [
+          [x, y + dy, z],
+          [x + dx, y + dy, z],
+          [x + dx, y + dy, z + dz],
+          [x, y + dy, z + dz]
+        ];
+
+        const faces = [
+          { pts: left, fill: shade(color, -24) },
+          { pts: right, fill: shade(color, 10) },
+          { pts: top, fill: shade(color, 34) }
+        ];
+
+        faces.forEach(function (face) {
+          const poly = create('polygon', {
+            points: ptsToStr(face.pts),
+            fill: face.fill,
+            opacity: String(actualOpacity),
+            stroke: actualStroke,
+            'stroke-width': '1.4'
+          });
+          group.appendChild(poly);
+        });
+      }
+
+      function drawLabel(group, text, anchor, explode, t) {
+        const px = anchor[0] + explode[0] * t;
+        const py = anchor[1] + explode[1] * t;
+        const pz = anchor[2] + explode[2] * t;
+        const p = iso(px, py, pz);
+        const x = p.x + CX;
+        const y = p.y + CY;
+
+        const wrapper = create('g', {
+          opacity: String(0.12 + 0.88 * t)
+        });
+        const rect = create('rect', {
+          x: String(x - 42),
+          y: String(y - 15),
+          width: '84',
+          height: '30',
+          rx: '12',
+          fill: 'rgba(255,255,255,0.9)',
+          stroke: 'rgba(15,23,42,0.10)'
+        });
+        const txt = create('text', {
+          x: String(x),
+          y: String(y + 1),
+          'text-anchor': 'middle',
+          'dominant-baseline': 'central',
+          'font-size': '13',
+          'font-weight': '700',
+          fill: '#0f172a'
+        });
+        txt.textContent = text;
+        wrapper.appendChild(rect);
+        wrapper.appendChild(txt);
+        group.appendChild(wrapper);
+      }
+
+      function getPieces() {
+        const U = Math.round(TOTAL * ratio);
+        const V = TOTAL - U;
+        const e = 92;
+
+        return {
+          U: U,
+          V: V,
+          pieces: [
+            {
+              key: 'u3',
+              x: 0, y: 0, z: 0,
+              dx: U, dy: U, dz: U,
+              color: '#60a5fa',
+              explode: [-1.2 * e, -0.9 * e, 0.55 * e],
+              label: 'u³',
+              labelAt: [U * 0.45, U * 0.58, U]
+            },
+            {
+              key: 'box-x',
+              x: U, y: 0, z: 0,
+              dx: V, dy: U, dz: TOTAL,
+              color: '#f59e0b',
+              explode: [1.7 * e, -0.5 * e, 0.52 * e],
+              label: 'uv(u+v)',
+              labelAt: [U + V * 0.5, U * 0.56, TOTAL]
+            },
+            {
+              key: 'box-y',
+              x: 0, y: U, z: 0,
+              dx: TOTAL, dy: V, dz: U,
+              color: '#34d399',
+              explode: [-0.35 * e, 1.75 * e, 0.48 * e],
+              label: 'uv(u+v)',
+              labelAt: [TOTAL * 0.5, U + V * 0.5, U]
+            },
+            {
+              key: 'box-z',
+              x: 0, y: 0, z: U,
+              dx: U, dy: TOTAL, dz: V,
+              color: '#a78bfa',
+              explode: [-0.55 * e, -0.55 * e, 1.85 * e],
+              label: 'uv(u+v)',
+              labelAt: [U * 0.46, TOTAL * 0.62, U + V]
+            },
+            {
+              key: 'v3',
+              x: U, y: U, z: U,
+              dx: V, dy: V, dz: V,
+              color: '#fb7185',
+              explode: [1.7 * e, 1.55 * e, 1.65 * e],
+              label: 'v³',
+              labelAt: [U + V * 0.55, U + V * 0.78, U + V]
+            }
+          ]
+        };
+      }
+
+      function runSelfChecks() {
+        const checks = [];
+        const data = getPieces();
+        checks.push({
+          ok: data.U + data.V === TOTAL,
+          text: 'u + v stays equal to the total cube side length'
+        });
+        checks.push({
+          ok: data.pieces.length === 5,
+          text: 'the decomposition contains 5 pieces'
+        });
+        checks.push({
+          ok: data.pieces.filter(function (p) { return p.label === 'uv(u+v)'; }).length === 3,
+          text: 'there are exactly 3 prism pieces labeled uv(u+v)'
+        });
+        checks.push({
+          ok: ratio >= 0.15 && ratio <= 0.85,
+          text: 'the u/v ratio remains inside the configured slider bounds'
+        });
+
+        testResults.innerHTML = '';
+        checks.forEach(function (check) {
+          const li = document.createElement('li');
+          li.textContent = (check.ok ? 'PASS: ' : 'FAIL: ') + check.text;
+          li.style.color = check.ok ? '#166534' : '#b91c1c';
+          testResults.appendChild(li);
+        });
+      }
+
+      function render() {
+        svg.innerHTML = '';
+
+        const defs = create('defs');
+        const filter = create('filter', {
+          id: 'softShadow',
+          x: '-20%', y: '-20%', width: '140%', height: '140%'
+        });
+        const drop = create('feDropShadow', {
+          dx: '0', dy: '10', 'stdDeviation': '10', 'flood-opacity': '0.16'
+        });
+        filter.appendChild(drop);
+        defs.appendChild(filter);
+        svg.appendChild(defs);
+
+        const shellGroup = create('g', {
+          opacity: String(0.16 * (1 - progress)),
+          filter: 'url(#softShadow)'
+        });
+        drawCuboid(shellGroup, 0, 0, 0, TOTAL, TOTAL, TOTAL, '#cbd5e1', 1);
+        svg.appendChild(shellGroup);
+
+        const piecesGroup = create('g', { filter: 'url(#softShadow)' });
+        const labelsGroup = create('g');
+        svg.appendChild(piecesGroup);
+        svg.appendChild(labelsGroup);
+
+        const data = getPieces();
+        const U = data.U;
+        const V = data.V;
+        const pieces = data.pieces;
+
+        pieces.forEach(function (piece) {
+          const x = piece.x + piece.explode[0] * progress;
+          const y = piece.y + piece.explode[1] * progress;
+          const z = piece.z + piece.explode[2] * progress;
+          drawCuboid(piecesGroup, x, y, z, piece.dx, piece.dy, piece.dz, piece.color, 0.97);
+        });
+
+        pieces.forEach(function (piece) {
+          drawLabel(labelsGroup, piece.label, piece.labelAt, piece.explode, progress);
+        });
+
+        explodeValue.textContent = progress.toFixed(2);
+        uvValue.textContent = 'u = ' + ratio.toFixed(2) + ', v = ' + (1 - ratio).toFixed(2);
+        sideText.textContent = 'u = ' + U + ', v = ' + V;
+        prismText.textContent = '3 × ' + U + ' × ' + V + ' × ' + TOTAL;
+        formulaText.textContent = '(u+v)³ = u³ + v³ + 3uv(u+v)';
+        runSelfChecks();
+      }
+
+      function animate(ts) {
+        if (!playing) return;
+        if (!startTime) startTime = ts;
+        const elapsed = (ts - startTime) % DURATION;
+        const phase = elapsed / DURATION;
+        progress = 0.5 - 0.5 * Math.cos(phase * 2 * Math.PI);
+        progressSlider.value = String(Math.round(progress * 1000));
+        render();
+        raf = window.requestAnimationFrame(animate);
+      }
+
+      function startAnimation() {
+        if (raf) window.cancelAnimationFrame(raf);
+        startTime = null;
+        raf = window.requestAnimationFrame(animate);
+      }
+
+      playBtn.addEventListener('click', function () {
+        playing = !playing;
+        playBtn.textContent = playing ? 'Pause' : 'Play';
+        if (playing) {
+          startAnimation();
+        } else if (raf) {
+          window.cancelAnimationFrame(raf);
+          raf = null;
+        }
+      });
+
+      resetBtn.addEventListener('click', function () {
+        playing = false;
+        if (raf) {
+          window.cancelAnimationFrame(raf);
+          raf = null;
+        }
+        playBtn.textContent = 'Play';
+        progress = 0;
+        progressSlider.value = '0';
+        render();
+      });
+
+      progressSlider.addEventListener('input', function (e) {
+        playing = false;
+        if (raf) {
+          window.cancelAnimationFrame(raf);
+          raf = null;
+        }
+        playBtn.textContent = 'Play';
+        progress = Number(e.target.value) / 1000;
+        render();
+      });
+
+      ratioSlider.addEventListener('input', function (e) {
+        ratio = Number(e.target.value) / 100;
+        render();
+      });
+
+      render();
+      startAnimation();
+    })();
+  </script>
+</body>
+</html>
+
