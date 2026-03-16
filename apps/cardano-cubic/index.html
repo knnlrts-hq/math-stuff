@@ -46,9 +46,7 @@
       overflow: hidden;
     }
 
-    .card-inner {
-      padding: 24px;
-    }
+    .card-inner { padding: 24px; }
 
     h1 {
       margin: 0 0 8px;
@@ -71,13 +69,19 @@
       background: linear-gradient(180deg, rgba(255,255,255,0.96), rgba(248,250,252,0.96));
       overflow: hidden;
       position: relative;
+      cursor: grab;
+      user-select: none;
+      -webkit-user-select: none;
+      touch-action: none;
     }
+    .viewport.dragging { cursor: grabbing; }
 
     svg {
       display: block;
       width: 100%;
       height: auto;
       aspect-ratio: 16 / 11;
+      pointer-events: none;
     }
 
     .overlay-formula {
@@ -93,6 +97,22 @@
       letter-spacing: -0.02em;
       box-shadow: 0 8px 24px rgba(15,23,42,0.06);
       z-index: 2;
+      pointer-events: none;
+    }
+
+    .drag-hint {
+      position: absolute;
+      bottom: 14px;
+      right: 16px;
+      background: rgba(255,255,255,0.85);
+      border: 1px solid rgba(15,23,42,0.06);
+      border-radius: 10px;
+      padding: 5px 10px;
+      font-size: 12px;
+      color: var(--muted);
+      pointer-events: none;
+      z-index: 2;
+      transition: opacity 0.6s ease;
     }
 
     .controls {
@@ -109,11 +129,7 @@
       justify-content: space-between;
     }
 
-    .buttons {
-      display: flex;
-      gap: 10px;
-      flex-wrap: wrap;
-    }
+    .buttons { display: flex; gap: 10px; flex-wrap: wrap; }
 
     button {
       border: 1px solid rgba(15,23,42,0.10);
@@ -127,15 +143,10 @@
       box-shadow: 0 3px 12px rgba(15,23,42,0.05);
       transition: transform 0.15s ease;
     }
-
     button:hover { transform: translateY(-1px); }
     button:active { transform: translateY(0); }
 
-    .control-block {
-      display: grid;
-      gap: 8px;
-      width: 100%;
-    }
+    .control-block { display: grid; gap: 8px; width: 100%; }
 
     .control-label {
       display: flex;
@@ -145,11 +156,7 @@
       font-size: 14px;
       color: var(--muted);
     }
-
-    .control-label strong {
-      color: var(--text);
-      font-weight: 700;
-    }
+    .control-label strong { color: var(--text); font-weight: 700; }
 
     input[type="range"] {
       width: 100%;
@@ -223,29 +230,8 @@
       line-height: 1.4;
     }
 
-    .test-box {
-      margin-top: 16px;
-      padding: 12px 14px;
-      border-radius: 16px;
-      background: rgba(15,23,42,0.03);
-      border: 1px solid rgba(15,23,42,0.06);
-      font-size: 13px;
-      color: var(--muted);
-    }
-
-    .test-box strong {
-      color: var(--text);
-    }
-
-    .test-box ul {
-      margin: 8px 0 0;
-      padding-left: 18px;
-    }
-
     @media (max-width: 980px) {
-      .grid {
-        grid-template-columns: 1fr;
-      }
+      .grid { grid-template-columns: 1fr; }
     }
   </style>
 </head>
@@ -254,14 +240,15 @@
     <div class="grid">
       <section class="card">
         <div class="card-inner">
-          <h1>Cardano’s cubic identity as volume</h1>
+          <h1>Cardano's cubic identity as volume</h1>
           <p class="subtitle">
             Start from one cube of side <strong>u+v</strong>, then pull it apart into a blue cube <strong>u³</strong>,
             a pink cube <strong>v³</strong>, and three matching prisms of volume <strong>uv(u+v)</strong> each.
           </p>
 
-          <div class="viewport">
+          <div class="viewport" id="viewport">
             <div class="overlay-formula" id="formulaText">(u+v)³ = u³ + v³ + 3uv(u+v)</div>
+            <div class="drag-hint" id="dragHint">Drag to rotate</div>
             <svg id="scene" viewBox="0 0 960 660" aria-label="Animated geometric decomposition of (u+v)^3"></svg>
           </div>
 
@@ -270,6 +257,7 @@
               <div class="buttons">
                 <button id="playBtn" type="button">Pause</button>
                 <button id="resetBtn" type="button">Reset</button>
+                <button id="resetViewBtn" type="button">Reset view</button>
               </div>
             </div>
 
@@ -298,11 +286,6 @@
                 <div class="pill-label">Three prisms together</div>
                 <div class="pill-value" id="prismText">3 × 102 × 48 × 150</div>
               </div>
-            </div>
-
-            <div class="test-box" id="testBox">
-              <strong>Self-checks:</strong>
-              <ul id="testResults"></ul>
             </div>
           </div>
         </div>
@@ -335,327 +318,384 @@
 
   <script>
     (function () {
-      const svg = document.getElementById('scene');
-      const playBtn = document.getElementById('playBtn');
-      const resetBtn = document.getElementById('resetBtn');
-      const progressSlider = document.getElementById('progressSlider');
-      const ratioSlider = document.getElementById('ratioSlider');
-      const explodeValue = document.getElementById('explodeValue');
-      const uvValue = document.getElementById('uvValue');
-      const sideText = document.getElementById('sideText');
-      const prismText = document.getElementById('prismText');
-      const formulaText = document.getElementById('formulaText');
-      const testResults = document.getElementById('testResults');
+      /* ─── DOM refs ─── */
+      var svg       = document.getElementById('scene');
+      var viewport  = document.getElementById('viewport');
+      var playBtn   = document.getElementById('playBtn');
+      var resetBtn  = document.getElementById('resetBtn');
+      var resetViewBtn = document.getElementById('resetViewBtn');
+      var progressSlider = document.getElementById('progressSlider');
+      var ratioSlider    = document.getElementById('ratioSlider');
+      var explodeValue   = document.getElementById('explodeValue');
+      var uvValue   = document.getElementById('uvValue');
+      var sideText  = document.getElementById('sideText');
+      var prismText = document.getElementById('prismText');
+      var dragHint  = document.getElementById('dragHint');
 
-      const COS = Math.cos(Math.PI / 6);
-      const SIN = Math.sin(Math.PI / 6);
-      const CX = 470;
-      const CY = 390;
-      const TOTAL = 150;
-      const SVG_NS = 'http://www.w3.org/2000/svg';
-      const DURATION = 5400;
+      /* ─── Constants ─── */
+      var CX = 480, CY = 330;          // SVG centre for projection
+      var TOTAL   = 150;                // cube side in world units
+      var HALF    = TOTAL / 2;
+      var SVG_NS  = 'http://www.w3.org/2000/svg';
+      var DURATION = 5400;              // one animation cycle (ms)
+      var SCALE    = 1.6;               // world-units → SVG-pixels
 
-      let playing = true;
-      let progress = 0.5;
-      let ratio = 0.68;
-      let raf = null;
-      let startTime = null;
+      /* ─── Mutable state ─── */
+      var playing   = true;
+      var progress  = 0.5;
+      var ratio     = 0.68;
+      var raf       = null;
+      var startTime = null;
 
-      function iso(x, y, z) {
+      // Camera Euler angles (radians)
+      var camYaw   = Math.PI / 4.8;    // horizontal
+      var camPitch = -Math.PI / 6;     // vertical (negative = looking down)
+      var DEFAULT_YAW   = camYaw;
+      var DEFAULT_PITCH = camPitch;
+
+      // Drag state
+      var dragging    = false;
+      var dragX0      = 0;
+      var dragY0      = 0;
+      var yawAtDrag   = 0;
+      var pitchAtDrag = 0;
+      var hintVisible = true;
+
+      /* ─── 3-D math helpers ─── */
+
+      // Precomputed trig (refreshed each render)
+      var cosY, sinY, cosP, sinP;
+
+      function updateTrig() {
+        cosY = Math.cos(camYaw);  sinY = Math.sin(camYaw);
+        cosP = Math.cos(camPitch); sinP = Math.sin(camPitch);
+      }
+
+      // Rotate a world-space point (centred on model origin) by yaw then pitch,
+      // return {sx, sy, depth} in screen space.
+      function project(wx, wy, wz) {
+        // centre on model
+        var x = wx - HALF;
+        var y = wy - HALF;
+        var z = wz - HALF;
+
+        // Yaw (rotate around world-Z, which is "up")
+        var x1 =  x * cosY + y * sinY;
+        var y1 = -x * sinY + y * cosY;
+        var z1 =  z;
+
+        // Pitch (rotate around screen-X, i.e. tilt forward/back)
+        var y2 =  y1 * cosP - z1 * sinP;
+        var z2 =  y1 * sinP + z1 * cosP;
+
         return {
-          x: (x - y) * COS,
-          y: (x + y) * SIN - z
+          sx: CX + x1 * SCALE,
+          sy: CY + y2 * SCALE,
+          depth: z2                     // used for sorting (larger = closer)
         };
       }
 
-      function ptsToStr(points) {
-        return points.map(function (pt) {
-          const p = iso(pt[0], pt[1], pt[2]);
-          return (p.x + CX).toFixed(2) + ',' + (p.y + CY).toFixed(2);
-        }).join(' ');
+      // Rotate a direction vector (no translation)
+      function rotateDir(dx, dy, dz) {
+        var x1 =  dx * cosY + dy * sinY;
+        var y1 = -dx * sinY + dy * cosY;
+        var z1 =  dz;
+        var y2 =  y1 * cosP - z1 * sinP;
+        var z2 =  y1 * sinP + z1 * cosP;
+        return { x: x1, y: y2, z: z2 };
       }
 
-      function shade(hex, amount) {
-        const clean = hex.replace('#', '');
-        const num = parseInt(clean, 16);
-        let r = (num >> 16) + amount;
-        let g = ((num >> 8) & 255) + amount;
-        let b = (num & 255) + amount;
-        r = Math.max(0, Math.min(255, r));
-        g = Math.max(0, Math.min(255, g));
-        b = Math.max(0, Math.min(255, b));
-        return 'rgb(' + r + ', ' + g + ', ' + b + ')';
+      /* ─── Colour helpers ─── */
+      function shade(hex, amt) {
+        var n = parseInt(hex.slice(1), 16);
+        var r = Math.max(0, Math.min(255, (n >> 16) + amt));
+        var g = Math.max(0, Math.min(255, ((n >> 8) & 0xff) + amt));
+        var b = Math.max(0, Math.min(255, (n & 0xff) + amt));
+        return 'rgb(' + r + ',' + g + ',' + b + ')';
       }
 
-      function create(tag, attrs) {
-        const el = document.createElementNS(SVG_NS, tag);
-        const safeAttrs = attrs || {};
-        Object.keys(safeAttrs).forEach(function (k) {
-          el.setAttribute(k, safeAttrs[k]);
-        });
-        return el;
+      // Per-face shading based on how much the face normal aligns with a
+      // fixed light direction (upper-right-front).  Returns an adjustment value.
+      function lightAdjust(nx, ny, nz) {
+        // Light direction in screen space (normalised-ish)
+        var lx = 0.35, ly = -0.25, lz = 0.90;
+        var dot = nx * lx + ny * ly + nz * lz;
+        return Math.round(dot * 38);    // -38 … +38 brightness shift
       }
 
-      function drawCuboid(group, x, y, z, dx, dy, dz, color, opacity, stroke) {
-        const actualOpacity = opacity == null ? 1 : opacity;
-        const actualStroke = stroke || 'rgba(15,23,42,0.34)';
+      /* ─── SVG helpers ─── */
+      function el(tag, attrs) {
+        var node = document.createElementNS(SVG_NS, tag);
+        if (attrs) {
+          var keys = Object.keys(attrs);
+          for (var i = 0; i < keys.length; i++) node.setAttribute(keys[i], attrs[keys[i]]);
+        }
+        return node;
+      }
 
-        const top = [
-          [x, y, z + dz],
-          [x + dx, y, z + dz],
-          [x + dx, y + dy, z + dz],
-          [x, y + dy, z + dz]
-        ];
-        const right = [
-          [x + dx, y, z],
-          [x + dx, y + dy, z],
-          [x + dx, y + dy, z + dz],
-          [x + dx, y, z + dz]
-        ];
-        const left = [
-          [x, y + dy, z],
-          [x + dx, y + dy, z],
-          [x + dx, y + dy, z + dz],
-          [x, y + dy, z + dz]
+      /* ─── Build the six faces of one cuboid ─── */
+      // Returns an array of face objects {corners3d[], normal[], colour, opacity}
+      // suitable for global depth-sorting.
+      function cuboidFaces(ox, oy, oz, dx, dy, dz, baseColour, opacity) {
+        var op = (opacity == null) ? 1 : opacity;
+        var x0 = ox,      y0 = oy,      z0 = oz;
+        var x1 = ox + dx, y1 = oy + dy, z1 = oz + dz;
+
+        // Each entry: [normal_x, normal_y, normal_z, four corner triplets]
+        var defs = [
+          // +Z top
+          [0,0,1,  [[x0,y0,z1],[x1,y0,z1],[x1,y1,z1],[x0,y1,z1]]],
+          // -Z bottom
+          [0,0,-1, [[x0,y1,z0],[x1,y1,z0],[x1,y0,z0],[x0,y0,z0]]],
+          // +X right
+          [1,0,0,  [[x1,y0,z0],[x1,y0,z1],[x1,y1,z1],[x1,y1,z0]]],
+          // -X left
+          [-1,0,0, [[x0,y1,z0],[x0,y1,z1],[x0,y0,z1],[x0,y0,z0]]],
+          // +Y front
+          [0,1,0,  [[x0,y1,z0],[x1,y1,z0],[x1,y1,z1],[x0,y1,z1]]],
+          // -Y back
+          [0,-1,0, [[x1,y0,z0],[x0,y0,z0],[x0,y0,z1],[x1,y0,z1]]]
         ];
 
-        const faces = [
-          { pts: left, fill: shade(color, -24) },
-          { pts: right, fill: shade(color, 10) },
-          { pts: top, fill: shade(color, 34) }
-        ];
+        var faces = [];
+        for (var i = 0; i < defs.length; i++) {
+          var d = defs[i];
+          var rn = rotateDir(d[0], d[1], d[2]);
 
-        faces.forEach(function (face) {
-          const poly = create('polygon', {
-            points: ptsToStr(face.pts),
-            fill: face.fill,
-            opacity: String(actualOpacity),
-            stroke: actualStroke,
-            'stroke-width': '1.4'
+          // Back-face cull: face normal must point towards viewer (positive depth direction)
+          if (rn.z <= 0) continue;
+
+          // Average depth for painter sort
+          var corners = d[3];
+          var depthSum = 0;
+          for (var c = 0; c < 4; c++) {
+            depthSum += project(corners[c][0], corners[c][1], corners[c][2]).depth;
+          }
+
+          faces.push({
+            corners: corners,
+            colour: baseColour,
+            lightNormal: rn,
+            opacity: op,
+            avgDepth: depthSum / 4
           });
-          group.appendChild(poly);
-        });
+        }
+        return faces;
       }
 
-      function drawLabel(group, text, anchor, explode, t) {
-        const px = anchor[0] + explode[0] * t;
-        const py = anchor[1] + explode[1] * t;
-        const pz = anchor[2] + explode[2] * t;
-        const p = iso(px, py, pz);
-        const x = p.x + CX;
-        const y = p.y + CY;
-
-        const wrapper = create('g', {
-          opacity: String(0.12 + 0.88 * t)
-        });
-        const rect = create('rect', {
-          x: String(x - 42),
-          y: String(y - 15),
-          width: '84',
-          height: '30',
-          rx: '12',
-          fill: 'rgba(255,255,255,0.9)',
-          stroke: 'rgba(15,23,42,0.10)'
-        });
-        const txt = create('text', {
-          x: String(x),
-          y: String(y + 1),
-          'text-anchor': 'middle',
-          'dominant-baseline': 'central',
-          'font-size': '13',
-          'font-weight': '700',
-          fill: '#0f172a'
-        });
-        txt.textContent = text;
-        wrapper.appendChild(rect);
-        wrapper.appendChild(txt);
-        group.appendChild(wrapper);
-      }
-
+      /* ─── Piece definitions ─── */
       function getPieces() {
-        const U = Math.round(TOTAL * ratio);
-        const V = TOTAL - U;
-        const e = 92;
+        var U = Math.round(TOTAL * ratio);
+        var V = TOTAL - U;
+        var e = 92;
 
         return {
-          U: U,
-          V: V,
-          pieces: [
-            {
-              key: 'u3',
-              x: 0, y: 0, z: 0,
-              dx: U, dy: U, dz: U,
-              color: '#60a5fa',
-              explode: [-1.2 * e, -0.9 * e, 0.55 * e],
-              label: 'u³',
-              labelAt: [U * 0.45, U * 0.58, U]
-            },
-            {
-              key: 'box-x',
-              x: U, y: 0, z: 0,
-              dx: V, dy: U, dz: TOTAL,
-              color: '#f59e0b',
-              explode: [1.7 * e, -0.5 * e, 0.52 * e],
-              label: 'uv(u+v)',
-              labelAt: [U + V * 0.5, U * 0.56, TOTAL]
-            },
-            {
-              key: 'box-y',
-              x: 0, y: U, z: 0,
-              dx: TOTAL, dy: V, dz: U,
-              color: '#34d399',
-              explode: [-0.35 * e, 1.75 * e, 0.48 * e],
-              label: 'uv(u+v)',
-              labelAt: [TOTAL * 0.5, U + V * 0.5, U]
-            },
-            {
-              key: 'box-z',
-              x: 0, y: 0, z: U,
-              dx: U, dy: TOTAL, dz: V,
-              color: '#a78bfa',
-              explode: [-0.55 * e, -0.55 * e, 1.85 * e],
-              label: 'uv(u+v)',
-              labelAt: [U * 0.46, TOTAL * 0.62, U + V]
-            },
-            {
-              key: 'v3',
-              x: U, y: U, z: U,
-              dx: V, dy: V, dz: V,
-              color: '#fb7185',
-              explode: [1.7 * e, 1.55 * e, 1.65 * e],
-              label: 'v³',
-              labelAt: [U + V * 0.55, U + V * 0.78, U + V]
-            }
+          U: U, V: V,
+          list: [
+            { x:0, y:0, z:0,  dx:U,     dy:U,     dz:U,     col:'#60a5fa', ex:[-1.2*e,-0.9*e, 0.55*e], label:'u\u00B3',      la:[U*.45,     U*.58,       U] },
+            { x:U, y:0, z:0,  dx:V,     dy:U,     dz:TOTAL, col:'#f59e0b', ex:[ 1.7*e,-0.5*e, 0.52*e], label:'uv(u+v)', la:[U+V*.5,    U*.56,       TOTAL] },
+            { x:0, y:U, z:0,  dx:TOTAL, dy:V,     dz:U,     col:'#34d399', ex:[-0.35*e,1.75*e,0.48*e], label:'uv(u+v)', la:[TOTAL*.5,  U+V*.5,      U] },
+            { x:0, y:0, z:U,  dx:U,     dy:TOTAL, dz:V,     col:'#a78bfa', ex:[-0.55*e,-0.55*e,1.85*e],label:'uv(u+v)', la:[U*.46,     TOTAL*.62,   U+V] },
+            { x:U, y:U, z:U,  dx:V,     dy:V,     dz:V,     col:'#fb7185', ex:[ 1.7*e, 1.55*e,1.65*e], label:'v\u00B3',      la:[U+V*.55,   U+V*.78,     U+V] }
           ]
         };
       }
 
-      function runSelfChecks() {
-        const checks = [];
-        const data = getPieces();
-        checks.push({
-          ok: data.U + data.V === TOTAL,
-          text: 'u + v stays equal to the total cube side length'
-        });
-        checks.push({
-          ok: data.pieces.length === 5,
-          text: 'the decomposition contains 5 pieces'
-        });
-        checks.push({
-          ok: data.pieces.filter(function (p) { return p.label === 'uv(u+v)'; }).length === 3,
-          text: 'there are exactly 3 prism pieces labeled uv(u+v)'
-        });
-        checks.push({
-          ok: ratio >= 0.15 && ratio <= 0.85,
-          text: 'the u/v ratio remains inside the configured slider bounds'
-        });
-
-        testResults.innerHTML = '';
-        checks.forEach(function (check) {
-          const li = document.createElement('li');
-          li.textContent = (check.ok ? 'PASS: ' : 'FAIL: ') + check.text;
-          li.style.color = check.ok ? '#166534' : '#b91c1c';
-          testResults.appendChild(li);
-        });
-      }
-
+      /* ─── Main render ─── */
       function render() {
-        svg.innerHTML = '';
+        // Avoid innerHTML on every frame for perf: remove children
+        while (svg.lastChild) svg.removeChild(svg.lastChild);
 
-        const defs = create('defs');
-        const filter = create('filter', {
-          id: 'softShadow',
-          x: '-20%', y: '-20%', width: '140%', height: '140%'
-        });
-        const drop = create('feDropShadow', {
-          dx: '0', dy: '10', 'stdDeviation': '10', 'flood-opacity': '0.16'
-        });
-        filter.appendChild(drop);
-        defs.appendChild(filter);
-        svg.appendChild(defs);
+        updateTrig();
 
-        const shellGroup = create('g', {
-          opacity: String(0.16 * (1 - progress)),
-          filter: 'url(#softShadow)'
-        });
-        drawCuboid(shellGroup, 0, 0, 0, TOTAL, TOTAL, TOTAL, '#cbd5e1', 1);
-        svg.appendChild(shellGroup);
+        var allFaces = [];
+        var labels   = [];
+        var data     = getPieces();
+        var U = data.U, V = data.V;
 
-        const piecesGroup = create('g', { filter: 'url(#softShadow)' });
-        const labelsGroup = create('g');
-        svg.appendChild(piecesGroup);
-        svg.appendChild(labelsGroup);
+        // Ghost shell (fades out as pieces explode)
+        if (progress < 0.95) {
+          var shellFaces = cuboidFaces(0, 0, 0, TOTAL, TOTAL, TOTAL, '#cbd5e1', 0.14 * (1 - progress));
+          for (var s = 0; s < shellFaces.length; s++) allFaces.push(shellFaces[s]);
+        }
 
-        const data = getPieces();
-        const U = data.U;
-        const V = data.V;
-        const pieces = data.pieces;
+        // Exploded pieces
+        for (var i = 0; i < data.list.length; i++) {
+          var p  = data.list[i];
+          var ox = p.x + p.ex[0] * progress;
+          var oy = p.y + p.ex[1] * progress;
+          var oz = p.z + p.ex[2] * progress;
 
-        pieces.forEach(function (piece) {
-          const x = piece.x + piece.explode[0] * progress;
-          const y = piece.y + piece.explode[1] * progress;
-          const z = piece.z + piece.explode[2] * progress;
-          drawCuboid(piecesGroup, x, y, z, piece.dx, piece.dy, piece.dz, piece.color, 0.97);
-        });
+          var pf = cuboidFaces(ox, oy, oz, p.dx, p.dy, p.dz, p.col, 0.97);
+          for (var f = 0; f < pf.length; f++) allFaces.push(pf[f]);
 
-        pieces.forEach(function (piece) {
-          drawLabel(labelsGroup, piece.label, piece.labelAt, piece.explode, progress);
-        });
+          // Label anchor
+          var lx = p.la[0] + p.ex[0] * progress;
+          var ly = p.la[1] + p.ex[1] * progress;
+          var lz = p.la[2] + p.ex[2] * progress;
+          var lp = project(lx, ly, lz);
+          labels.push({ text: p.label, sx: lp.sx, sy: lp.sy, depth: lp.depth });
+        }
 
+        // Painter sort: back-to-front (lowest depth drawn first)
+        allFaces.sort(function (a, b) { return a.avgDepth - b.avgDepth; });
+
+        // Draw faces
+        for (var j = 0; j < allFaces.length; j++) {
+          var face = allFaces[j];
+          var pts = '';
+          for (var k = 0; k < face.corners.length; k++) {
+            var pp = project(face.corners[k][0], face.corners[k][1], face.corners[k][2]);
+            if (k > 0) pts += ' ';
+            pts += pp.sx.toFixed(1) + ',' + pp.sy.toFixed(1);
+          }
+
+          var adj  = lightAdjust(face.lightNormal.x, face.lightNormal.y, face.lightNormal.z);
+          var fill = shade(face.colour, adj);
+
+          svg.appendChild(el('polygon', {
+            points: pts,
+            fill: fill,
+            opacity: String(face.opacity),
+            stroke: 'rgba(15,23,42,0.25)',
+            'stroke-width': '0.9',
+            'stroke-linejoin': 'round'
+          }));
+        }
+
+        // Labels (drawn on top, also depth-sorted)
+        labels.sort(function (a, b) { return a.depth - b.depth; });
+        for (var m = 0; m < labels.length; m++) {
+          var lb = labels[m];
+          var g = el('g', { opacity: String(Math.min(1, 0.1 + 0.9 * progress)) });
+          g.appendChild(el('rect', {
+            x: String(lb.sx - 42), y: String(lb.sy - 15),
+            width: '84', height: '30', rx: '12',
+            fill: 'rgba(255,255,255,0.92)',
+            stroke: 'rgba(15,23,42,0.10)',
+            'stroke-width': '1'
+          }));
+          var txt = el('text', {
+            x: String(lb.sx), y: String(lb.sy + 1),
+            'text-anchor': 'middle',
+            'dominant-baseline': 'central',
+            'font-size': '13',
+            'font-weight': '700',
+            fill: '#0f172a',
+            'font-family': 'Inter, system-ui, sans-serif'
+          });
+          txt.textContent = lb.text;
+          g.appendChild(txt);
+          svg.appendChild(g);
+        }
+
+        /* Update readouts */
         explodeValue.textContent = progress.toFixed(2);
-        uvValue.textContent = 'u = ' + ratio.toFixed(2) + ', v = ' + (1 - ratio).toFixed(2);
+        uvValue.textContent  = 'u = ' + ratio.toFixed(2) + ', v = ' + (1 - ratio).toFixed(2);
         sideText.textContent = 'u = ' + U + ', v = ' + V;
-        prismText.textContent = '3 × ' + U + ' × ' + V + ' × ' + TOTAL;
-        formulaText.textContent = '(u+v)³ = u³ + v³ + 3uv(u+v)';
-        runSelfChecks();
+        prismText.textContent = '3 \u00D7 ' + U + ' \u00D7 ' + V + ' \u00D7 ' + TOTAL;
       }
 
-      function animate(ts) {
+      /* ─── Animation loop ─── */
+      function tick(ts) {
         if (!playing) return;
-        if (!startTime) startTime = ts;
-        const elapsed = (ts - startTime) % DURATION;
-        const phase = elapsed / DURATION;
-        progress = 0.5 - 0.5 * Math.cos(phase * 2 * Math.PI);
+        if (startTime === null) startTime = ts;
+        var elapsed = (ts - startTime) % DURATION;
+        progress = 0.5 - 0.5 * Math.cos((elapsed / DURATION) * 2 * Math.PI);
         progressSlider.value = String(Math.round(progress * 1000));
         render();
-        raf = window.requestAnimationFrame(animate);
+        raf = requestAnimationFrame(tick);
       }
 
-      function startAnimation() {
-        if (raf) window.cancelAnimationFrame(raf);
+      function startAnim() {
+        if (raf) cancelAnimationFrame(raf);
         startTime = null;
-        raf = window.requestAnimationFrame(animate);
+        raf = requestAnimationFrame(tick);
       }
 
+      /* ─── Pointer drag for rotation ─── */
+      function ptrDown(cx, cy) {
+        dragging    = true;
+        dragX0      = cx;
+        dragY0      = cy;
+        yawAtDrag   = camYaw;
+        pitchAtDrag = camPitch;
+        viewport.classList.add('dragging');
+        if (hintVisible) {
+          dragHint.style.opacity = '0';
+          hintVisible = false;
+        }
+      }
+
+      function ptrMove(cx, cy) {
+        if (!dragging) return;
+        var dx = cx - dragX0;
+        var dy = cy - dragY0;
+        camYaw   = yawAtDrag   - dx * 0.005;
+        camPitch = pitchAtDrag + dy * 0.005;
+        // Clamp pitch to ±85° to prevent flipping
+        camPitch = Math.max(-1.48, Math.min(1.48, camPitch));
+        // When animation is paused we still need to show the new angle
+        if (!playing) render();
+      }
+
+      function ptrUp() {
+        if (!dragging) return;
+        dragging = false;
+        viewport.classList.remove('dragging');
+      }
+
+      // Mouse events
+      viewport.addEventListener('mousedown', function (e) {
+        e.preventDefault();
+        ptrDown(e.clientX, e.clientY);
+      });
+      window.addEventListener('mousemove', function (e) {
+        if (dragging) ptrMove(e.clientX, e.clientY);
+      });
+      window.addEventListener('mouseup', ptrUp);
+
+      // Touch events
+      viewport.addEventListener('touchstart', function (e) {
+        if (e.touches.length === 1) {
+          e.preventDefault();
+          ptrDown(e.touches[0].clientX, e.touches[0].clientY);
+        }
+      }, { passive: false });
+      window.addEventListener('touchmove', function (e) {
+        if (dragging && e.touches.length === 1) {
+          ptrMove(e.touches[0].clientX, e.touches[0].clientY);
+        }
+      }, { passive: true });
+      window.addEventListener('touchend',   ptrUp);
+      window.addEventListener('touchcancel', ptrUp);
+
+      /* ─── Button handlers ─── */
       playBtn.addEventListener('click', function () {
         playing = !playing;
         playBtn.textContent = playing ? 'Pause' : 'Play';
-        if (playing) {
-          startAnimation();
-        } else if (raf) {
-          window.cancelAnimationFrame(raf);
-          raf = null;
-        }
+        if (playing) startAnim();
+        else if (raf) { cancelAnimationFrame(raf); raf = null; }
       });
 
       resetBtn.addEventListener('click', function () {
         playing = false;
-        if (raf) {
-          window.cancelAnimationFrame(raf);
-          raf = null;
-        }
+        if (raf) { cancelAnimationFrame(raf); raf = null; }
         playBtn.textContent = 'Play';
         progress = 0;
         progressSlider.value = '0';
         render();
       });
 
+      resetViewBtn.addEventListener('click', function () {
+        camYaw   = DEFAULT_YAW;
+        camPitch = DEFAULT_PITCH;
+        if (!playing) render();
+      });
+
       progressSlider.addEventListener('input', function (e) {
         playing = false;
-        if (raf) {
-          window.cancelAnimationFrame(raf);
-          raf = null;
-        }
+        if (raf) { cancelAnimationFrame(raf); raf = null; }
         playBtn.textContent = 'Play';
         progress = Number(e.target.value) / 1000;
         render();
@@ -663,13 +703,13 @@
 
       ratioSlider.addEventListener('input', function (e) {
         ratio = Number(e.target.value) / 100;
-        render();
+        if (!playing) render();
       });
 
+      /* ─── Boot ─── */
       render();
-      startAnimation();
+      startAnim();
     })();
   </script>
 </body>
 </html>
-
